@@ -1,1 +1,3 @@
-// Calendar booking step
+export default function SchedulePage() {
+  return <div>Schedule Booking</div>;
+}
