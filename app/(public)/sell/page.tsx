@@ -1,1 +1,3 @@
-// Seller intake form (Step 1-3)
+export default function SellPage() {
+  return <div>Sell Your Vehicle</div>;
+}

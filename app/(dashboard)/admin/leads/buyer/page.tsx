@@ -1,1 +1,3 @@
-// Buyer CRM + follow-up
+export default function BuyerLeadsPage() {
+  return <div>Buyer Leads</div>;
+}

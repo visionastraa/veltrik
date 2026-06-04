@@ -1,1 +1,3 @@
-// Buyer listing page
+export default function InventoryPage() {
+  return <div>Inventory</div>;
+}
