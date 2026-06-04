@@ -1,0 +1,1 @@
+// Nodemailer SMTP config

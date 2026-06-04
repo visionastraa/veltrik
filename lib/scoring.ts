@@ -1,0 +1,1 @@
+// EV condition scoring algorithm
