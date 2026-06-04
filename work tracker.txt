@@ -1,0 +1,376 @@
+================================================================================
+                        VELTRIK — WORK TRACKER
+                  EV Marketplace Platform (Next.js)
+================================================================================
+
+Project Path  : D:\vison astra\veltrik
+Created On    : 2026-06-04
+Last Updated  : 2026-06-04
+
+================================================================================
+TECH STACK (ACTUAL — after adapting to latest versions)
+================================================================================
+
+  Layer           | Technology                         | Version
+  ----------------|------------------------------------|----------
+  Framework       | Next.js (App Router)               | 16.2.7
+  Language        | TypeScript                         | 5.9.3
+  Styling         | Tailwind CSS                       | v4
+  UI Library      | shadcn/ui (base-nova preset)       | Latest
+  ORM             | Prisma                             | 7.8.0
+  DB Adapter      | @prisma/adapter-mariadb            | Latest
+  Database        | Hostinger MySQL                    | -
+  Auth            | Auth.js (next-auth@beta)           | v5
+  Email           | Nodemailer                         | Latest
+  Validation      | Zod                                | Latest
+  Runtime         | Node.js                            | 25.6.1
+
+  NOTE: Originally planned for Next.js 14 + Prisma 5, but create-next-app
+  installed the latest versions. All code has been adapted accordingly:
+    - Prisma 7 requires prisma.config.ts + driver adapter (no url in schema)
+    - Next.js 16 renamed middleware.ts → proxy.ts
+
+================================================================================
+PHASE 1 — PROJECT SCAFFOLDING                                    [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  [✅] Ran: npx create-next-app@latest ./ --typescript --tailwind --app --eslint
+  [✅] Created full folder structure with route groups:
+       - app/(public)/     → Homepage, /inventory, /sell, etc.
+       - app/(auth)/       → /login, /register
+       - app/(dashboard)/  → /admin/*, /inspector/*
+       - app/api/          → All API routes
+  [✅] Created /lib/ folder with placeholder files
+  [✅] Created /components/ folder with placeholder files
+  [✅] Created /prisma/ folder with schema + migrations dir
+  [✅] Created /public/uploads/ for file storage
+
+================================================================================
+PHASE 2 — DEPENDENCY INSTALLATION                                [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  [✅] npm install (base dependencies — 359 packages)
+
+  Production Dependencies Installed:
+  [✅] @prisma/client
+  [✅] next-auth@beta (Auth.js v5)
+  [✅] @auth/prisma-adapter
+  [✅] bcryptjs
+  [✅] nodemailer
+  [✅] zod
+  [✅] @prisma/adapter-mariadb
+  [✅] mariadb
+  [✅] dotenv
+
+  Dev Dependencies Installed:
+  [✅] prisma (CLI)
+  [✅] @types/bcryptjs
+  [✅] @types/nodemailer
+
+  shadcn/ui Dependencies (auto-installed by init):
+  [✅] clsx
+  [✅] tailwind-merge
+  [✅] class-variance-authority
+  [✅] lucide-react
+  [✅] tw-animate-css
+
+================================================================================
+PHASE 3 — SHADCN/UI SETUP                                        [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  [✅] Ran: npx shadcn@latest init --defaults --yes --force
+  [✅] Created: components.json (configuration)
+  [✅] Created: lib/utils.ts (cn() class merging utility)
+  [✅] Created: components/ui/button.tsx (default component)
+  [✅] Updated: app/globals.css (full oklch theme with light/dark mode)
+  [✅] Using: base-nova preset with Tailwind v4
+
+================================================================================
+PHASE 4 — ENVIRONMENT VARIABLES                                  [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  File: .env
+
+  [✅] DATABASE_URL     → mysql://u707137586_Veltrik:***@srv1640.hstgr.io:3306/u707137586_Veltrik
+  [✅] NEXTAUTH_URL     → http://localhost:3000
+  [✅] NEXTAUTH_SECRET  → (needs real secret — generate with: openssl rand -base64 32)
+  [⏳] GOOGLE_CLIENT_ID     → (empty — needs Google Cloud Console setup)
+  [⏳] GOOGLE_CLIENT_SECRET → (empty — needs Google Cloud Console setup)
+  [⏳] SMTP_HOST            → (empty — needs Hostinger SMTP details)
+  [⏳] SMTP_PORT            → 465
+  [⏳] SMTP_USER            → (empty — needs Hostinger email)
+  [⏳] SMTP_PASS            → (empty — needs Hostinger email password)
+
+================================================================================
+PHASE 5 — PRISMA SCHEMA & DATABASE                               [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  Files:
+    - prisma/schema.prisma   → Full schema (9 models, 5 enums)
+    - prisma.config.ts       → Prisma 7 config with datasource URL
+
+  Enums Created:
+  [✅] Role          → BUYER, SELLER, INSPECTOR, ADMIN, MANAGER
+  [✅] SellerStatus  → SUBMITTED, SCHEDULED, INSPECTED, OFFER_MADE, ACQUIRED, REJECTED
+  [✅] BuyerStatus   → LEAD, VISIT_SCHEDULED, FOLLOW_UP_REQUIRED, CONVERTED, LOST
+  [✅] ListingStatus → AVAILABLE, RESERVED, SOLD
+  [✅] BookingType   → SELLER_INSPECTION, BUYER_VISIT
+
+  Models Created:
+  [✅] User              → id, name, email, phone, password, role, emailVerified, image
+  [✅] Account           → Auth.js required (OAuth accounts)
+  [✅] Session           → Auth.js required (session tracking)
+  [✅] VerificationToken → Auth.js required (email verification)
+  [✅] SellerLead        → brand, model, year, askingPrice, status, photos
+  [✅] Inspection        → Part 1 (physical) + Part 2 (technical) + Appraisal fields
+  [✅] Listing           → title, price, status, photos, publishedAt
+  [✅] BuyerLead         → brandsInterested, modelsInterested, status
+  [✅] Booking           → type, scheduledAt, status
+
+  Database Operations:
+  [✅] npx prisma validate  → Schema valid
+  [✅] npx prisma generate  → Client generated
+  [✅] npx prisma db push   → All tables created on Hostinger MySQL
+
+  Inspection Model Fields (detailed):
+    Part 1 (Physical):
+      ageYears, ageMonths, kmDriven, bodyDamage, bodyDamagePhoto?,
+      forkDamage, accidentHistory, warrantyStatus, warrantyType?,
+      warrantyExpiry?, partsReplaced, replacedParts?, adminComments?
+
+    Part 2 (Technical):
+      batteryCharge, batteryHealth, batteryVoltage, physicalDamage,
+      brakeSystem, brakePads, wheelAlignment, testDriveRating,
+      testDriveNotes?, techComments?
+
+    Appraisal:
+      finalOffer?, approvedBy?, approvedAt?
+
+================================================================================
+PHASE 6 — AUTH.JS v5 SETUP                                       [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  Files:
+    - auth.ts                              → Root auth config
+    - app/api/auth/[...nextauth]/route.ts  → Route handler (GET + POST)
+    - types/next-auth.d.ts                 → Type augmentation for session
+
+  Configuration:
+  [✅] Credentials Provider  → Email + password with bcrypt verification
+  [✅] Google Provider       → OAuth login (needs credentials in .env)
+  [✅] Prisma Adapter        → Session/account persistence to MySQL
+  [✅] JWT Strategy          → Required for credentials provider
+  [✅] JWT Callback          → Attaches user id + role to token
+  [✅] Session Callback      → Exposes id + role on session.user
+  [✅] Custom Sign-in Page   → Redirects to /login
+
+================================================================================
+PHASE 7 — RBAC PROXY (MIDDLEWARE)                                 [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  File: proxy.ts (Next.js 16 renamed middleware.ts → proxy.ts)
+
+  Access Control Rules:
+  [✅] /inspector/*  → Only INSPECTOR and ADMIN roles
+  [✅] /admin/*      → Only ADMIN and MANAGER roles
+  [✅] All others    → Public access (no auth required)
+  [✅] Unauthorized  → Redirect to /login
+
+  Matcher excludes: api, _next/static, _next/image, favicon.ico,
+                    sitemap.xml, robots.txt, uploads
+
+================================================================================
+PHASE 8 — LIBRARY MODULES                                        [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  ── lib/prisma.ts ──────────────────────────────────────────────
+  [✅] Prisma client singleton
+  [✅] Uses PrismaMariaDb adapter (Prisma 7 requirement)
+  [✅] Reuses instance on globalThis in development
+  [✅] Creates fresh instance in production
+
+  ── lib/upload.ts ──────────────────────────────────────────────
+  [✅] saveFile(file: File, folder: string): Promise<string>
+  [✅] Saves to /public/uploads/{folder}/{timestamp}-{filename}
+  [✅] Creates directory recursively if missing
+  [✅] Sanitizes filename (replaces special chars with _)
+  [✅] Returns public URL path: /uploads/{folder}/{filename}
+
+  ── lib/mailer.ts ──────────────────────────────────────────────
+  [✅] sendMail({ to, subject, html }): Promise<void>
+  [✅] Nodemailer transporter with Hostinger SMTP
+  [✅] SSL secure connection (port 465)
+  [✅] Reads config from env: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS
+
+  ── lib/slots.ts ──────────────────────────────────────────────
+  [✅] getAvailableSlots(date: string): Promise<string[]>
+  [✅] Base slots: 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 17:30
+  [✅] Returns [] for Sundays
+  [✅] Queries Prisma Booking table
+  [✅] Removes slots with >= 3 bookings for that date+time
+
+  ── lib/scoring.ts ──────────────────────────────────────────────
+  [✅] calculateScore(inspection): { score: number, band: string }
+  [✅] Battery Health:    35 pts (health% × 0.35)
+  [✅] KM Driven:         20 pts (0km=20, 10k=18, 20k=15, 30k=12, 40k=9, 50k+=5)
+  [✅] Vehicle Age:        15 pts (1yr=15, 2=13, 3=11, 4=8, 5+=5)
+  [✅] Body Damage:        15 pts (pass=15, minor=8, severe=0)
+  [✅] Brake System:       10 pts (pass=10, needs_repair=0)
+  [✅] Accident History:    5 pts (clean=5, history_found=0)
+  [✅] Bands: Premium(85-100), Good(70-84), Fair(50-69), Reject(<50)
+
+  ── lib/utils.ts (auto-generated by shadcn) ────────────────────
+  [✅] cn() — Tailwind class merging with clsx + tailwind-merge
+
+================================================================================
+PHASE 9 — BUILD VERIFICATION                                     [✅ COMPLETED]
+================================================================================
+
+  Date: 2026-06-04
+
+  Command: npx next build
+  Result:  ✅ SUCCESS
+
+  Build Output:
+    - Compiled successfully in 3.4s
+    - TypeScript: 0 errors
+    - 25 routes generated (17 static + 8 dynamic)
+    - Proxy (middleware) active
+
+  Routes:
+    ○ Static Pages (17):
+      /, /admin, /admin/leads/buyer, /admin/leads/seller,
+      /admin/listings, /inspector, /inventory, /login,
+      /register, /sell, /sell/confirm, /sell/schedule, /_not-found
+
+    ƒ Dynamic Pages (8):
+      /admin/inspections/[id], /inspector/inspect/[id],
+      /inventory/[id], /api/auth/[...nextauth],
+      /api/admin/approve, /api/admin/reject,
+      /api/buyer/book, /api/buyer/lead,
+      /api/inspection/submit, /api/razorpay/create-order,
+      /api/razorpay/verify, /api/seller/schedule,
+      /api/seller/submit, /api/upload
+
+================================================================================
+COMPLETE FILE LISTING
+================================================================================
+
+  Root Config:
+    .env                    → Environment variables (with real DB creds)
+    .gitignore              → Git ignore rules
+    auth.ts                 → Auth.js v5 configuration
+    components.json         → shadcn/ui configuration
+    eslint.config.mjs       → ESLint config
+    next-env.d.ts           → Next.js TypeScript env
+    next.config.ts          → Next.js config (serverExternalPackages)
+    package.json            → Dependencies & scripts
+    postcss.config.mjs      → PostCSS config
+    prisma.config.ts        → Prisma 7 config
+    proxy.ts                → RBAC middleware (Next.js 16 proxy)
+    tsconfig.json           → TypeScript config
+    README.md               → Project readme
+
+  app/
+    layout.tsx              → Root layout (Geist fonts)
+    page.tsx                → Root page (default Next.js)
+    globals.css             → Global styles + shadcn theme
+    favicon.ico             → Favicon
+
+  app/(public)/
+    page.tsx                → Homepage
+    inventory/page.tsx      → Buyer listing page
+    inventory/[id]/page.tsx → Vehicle detail + booking
+    sell/page.tsx           → Seller intake form
+    sell/schedule/page.tsx  → Calendar booking step
+    sell/confirm/page.tsx   → Booking confirmation
+
+  app/(auth)/
+    login/page.tsx          → Login page
+    register/page.tsx       → Register page
+
+  app/(dashboard)/
+    admin/page.tsx                     → Admin overview stats
+    admin/leads/seller/page.tsx        → All seller submissions
+    admin/leads/buyer/page.tsx         → Buyer CRM + follow-up
+    admin/inspections/[id]/page.tsx    → Inspection detail view
+    admin/listings/page.tsx            → Manage published listings
+    inspector/page.tsx                 → Inspector dashboard
+    inspector/inspect/[id]/page.tsx    → Inspection checklist form
+
+  app/api/
+    auth/[...nextauth]/route.ts    → Auth.js handler
+    seller/submit/route.ts         → POST seller intake
+    seller/schedule/route.ts       → POST booking slot
+    buyer/lead/route.ts            → POST buyer lead capture
+    buyer/book/route.ts            → POST buyer visit booking
+    inspection/submit/route.ts     → POST inspector checklist
+    admin/approve/route.ts         → POST approve listing
+    admin/reject/route.ts          → POST reject vehicle
+    upload/route.ts                → POST file upload handler
+    razorpay/create-order/route.ts → POST payment order
+    razorpay/verify/route.ts       → POST payment verification
+
+  lib/
+    prisma.ts               → Prisma client singleton
+    upload.ts               → File save helper
+    mailer.ts               → Nodemailer SMTP helper
+    slots.ts                → Booking slot logic
+    scoring.ts              → EV condition scoring
+    utils.ts                → cn() class utility (shadcn)
+    msg91.ts                → SMS OTP helper (placeholder)
+    razorpay.ts             → Payment helper (placeholder)
+
+  components/
+    ui/button.tsx           → shadcn Button component
+    ui/.gitkeep             → UI directory placeholder
+    VehicleCard.tsx          → Vehicle card (placeholder)
+    BookingCalendar.tsx      → Booking calendar (placeholder)
+    BrandModelSelector.tsx   → Brand/model selector (placeholder)
+    StatusBadge.tsx          → Status badge (placeholder)
+    InspectionForm/index.tsx → Inspection form (placeholder)
+
+  prisma/
+    schema.prisma           → Full database schema
+    migrations/.gitkeep     → Migrations directory
+
+  public/
+    uploads/.gitkeep        → Upload directory
+    file.svg, globe.svg, next.svg, vercel.svg, window.svg → Default assets
+
+  types/
+    next-auth.d.ts          → Auth.js session type augmentation
+
+================================================================================
+PENDING ITEMS (for future work)
+================================================================================
+
+  [⏳] Generate NEXTAUTH_SECRET (run: openssl rand -base64 32)
+  [⏳] Set up Google OAuth credentials in Google Cloud Console
+  [⏳] Fill in Hostinger SMTP credentials in .env
+  [⏳] Implement lib/msg91.ts — SMS OTP via MSG91
+  [⏳] Implement lib/razorpay.ts — Razorpay payment integration
+  [⏳] Build actual UI for all page components
+  [⏳] Build actual logic for all API routes
+  [⏳] Set up GitHub → Hostinger auto deploy (CI/CD)
+  [⏳] Install React Hook Form + Zustand for form state management
+
+================================================================================
+                            END OF WORK TRACKER
+================================================================================
