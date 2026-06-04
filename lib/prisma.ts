@@ -6,7 +6,13 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaMariaDb(process.env.DATABASE_URL!);
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    // During build time, DATABASE_URL may not be available.
+    // Return a client without adapter — it won't connect but allows build to pass.
+    return new PrismaClient();
+  }
+  const adapter = new PrismaMariaDb(url);
   return new PrismaClient({ adapter });
 }
 
