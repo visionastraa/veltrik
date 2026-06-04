@@ -1,1 +1,6 @@
-// POST buyer lead capture
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  // TODO: Buyer lead capture logic
+  return NextResponse.json({ message: "Not implemented" }, { status: 501 });
+}

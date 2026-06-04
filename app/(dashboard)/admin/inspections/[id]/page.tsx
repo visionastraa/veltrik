@@ -1,1 +1,3 @@
-// Inspection detail view
+export default function InspectionDetailPage() {
+  return <div>Inspection Detail</div>;
+}

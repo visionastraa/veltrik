@@ -1,1 +1,219 @@
-// Prisma schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum Role {
+  BUYER
+  SELLER
+  INSPECTOR
+  ADMIN
+  MANAGER
+}
+
+enum SellerStatus {
+  SUBMITTED
+  SCHEDULED
+  INSPECTED
+  OFFER_MADE
+  ACQUIRED
+  REJECTED
+}
+
+enum BuyerStatus {
+  LEAD
+  VISIT_SCHEDULED
+  FOLLOW_UP_REQUIRED
+  CONVERTED
+  LOST
+}
+
+enum ListingStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum BookingType {
+  SELLER_INSPECTION
+  BUYER_VISIT
+}
+
+// ─── Auth.js Required Models ─────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── Core Models ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  phone         String?
+  password      String?
+  role          Role      @default(BUYER)
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts    Account[]
+  sessions    Session[]
+  sellerLeads SellerLead[]
+  buyerLeads  BuyerLead[]
+  inspections Inspection[]
+  bookings    Booking[]
+}
+
+model SellerLead {
+  id          String       @id @default(cuid())
+  brand       String
+  model       String
+  year        Int
+  askingPrice Float?
+  status      SellerStatus @default(SUBMITTED)
+  photos      String       @db.Text // JSON array stored as text
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  sellerId String
+  seller   User   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  inspection Inspection?
+  listing    Listing?
+  bookings   Booking[]
+}
+
+model Inspection {
+  id String @id @default(cuid())
+
+  // ─── Part 1: Physical Inspection ───
+  ageYears        Int
+  ageMonths       Int
+  kmDriven        Float
+  bodyDamage      String          // "pass" | "minor" | "severe"
+  bodyDamagePhoto String?
+  forkDamage      Boolean
+  accidentHistory String          // "clean" | "history_found"
+  warrantyStatus  String          // "active" | "expired" | "none"
+  warrantyType    String?
+  warrantyExpiry  DateTime?
+  partsReplaced   Boolean
+  replacedParts   String?
+  adminComments   String?         @db.Text
+
+  // ─── Part 2: Technical Inspection ───
+  batteryCharge   Float
+  batteryHealth   Float
+  batteryVoltage  Float
+  physicalDamage  Boolean
+  brakeSystem     String          // "pass" | "needs_repair"
+  brakePads       String          // "good" | "worn" | "replace"
+  wheelAlignment  String          // "pass" | "needs_adjustment"
+  testDriveRating Int
+  testDriveNotes  String?         @db.Text
+  techComments    String?         @db.Text
+
+  // ─── Appraisal ───
+  finalOffer Float?
+  approvedBy String?
+  approvedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sellerLeadId String     @unique
+  sellerLead   SellerLead @relation(fields: [sellerLeadId], references: [id], onDelete: Cascade)
+
+  inspectorId String
+  inspector   User   @relation(fields: [inspectorId], references: [id])
+}
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String
+  price       Float
+  status      ListingStatus @default(AVAILABLE)
+  photos      String        @db.Text // JSON array stored as text
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  sellerLeadId String     @unique
+  sellerLead   SellerLead @relation(fields: [sellerLeadId], references: [id], onDelete: Cascade)
+
+  buyerLeads BuyerLead[]
+  bookings   Booking[]
+}
+
+model BuyerLead {
+  id               String      @id @default(cuid())
+  brandsInterested String      @db.Text // JSON array stored as text
+  modelsInterested String      @db.Text // JSON array stored as text
+  status           BuyerStatus @default(LEAD)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  buyerId String
+  buyer   User   @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
+}
+
+model Booking {
+  id          String      @id @default(cuid())
+  type        BookingType
+  scheduledAt DateTime
+  status      String      @default("confirmed")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  sellerLeadId String?
+  sellerLead   SellerLead? @relation(fields: [sellerLeadId], references: [id])
+
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
+}
