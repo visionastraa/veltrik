@@ -2,16 +2,26 @@
   "name": "veltrik",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\",\"esModuleInterop\":true} prisma/seed.ts"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "npx prisma db seed",
+    "seed:run": "ts-node --compiler-options {\"module\":\"CommonJS\",\"esModuleInterop\":true} prisma/seed.ts",
+    "seed:reset": "npx prisma migrate reset && npx prisma db seed",
+    "migrate": "npx prisma migrate dev",
+    "migrate:deploy": "npx prisma migrate deploy",
+    "studio": "npx prisma studio",
+    "generate": "npx prisma generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
     "@base-ui/react": "^1.5.0",
-    "@prisma/adapter-mariadb": "^7.8.0",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -19,9 +29,11 @@
     "dotenv": "^17.4.2",
     "lucide-react": "^1.17.0",
     "mariadb": "^3.5.2",
+    "mysql2": "^3.22.5",
     "next": "16.2.7",
     "next-auth": "^5.0.0-beta.31",
     "nodemailer": "^7.0.13",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "shadcn": "^4.10.0",
@@ -32,7 +44,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^20",
+    "@types/node": "^20.19.43",
     "@types/nodemailer": "^8.0.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -40,6 +52,7 @@
     "eslint-config-next": "16.2.7",
     "prisma": "^7.8.0",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

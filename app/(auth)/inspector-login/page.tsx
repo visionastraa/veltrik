@@ -99,8 +99,8 @@ export default function InspectorLoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
+        <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
+          <div className="space-y-1.5" suppressHydrationWarning>
             <label htmlFor="email" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Email Address
             </label>
@@ -114,11 +114,12 @@ export default function InspectorLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="inspector@veltrik.com"
               disabled={loading}
+              suppressHydrationWarning
               className="w-full px-3.5 py-2 rounded-lg border border-border bg-background text-sm outline-none transition-all focus:border-ring focus:ring-2 focus:ring-ring/25 disabled:opacity-50"
             />
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-1.5" suppressHydrationWarning>
             <label htmlFor="current-password" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Password
             </label>
@@ -133,6 +134,7 @@ export default function InspectorLoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 disabled={loading}
+                suppressHydrationWarning
                 className="w-full pl-3.5 pr-10 py-2 rounded-lg border border-border bg-background text-sm outline-none transition-all focus:border-ring focus:ring-2 focus:ring-ring/25 disabled:opacity-50"
               />
               <button
