@@ -26,10 +26,13 @@ export async function proxy(request: NextRequest) {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  // Inspector routes: only INSPECTOR and ADMIN
+  // Inspector routes: only INSPECTOR
   if (isInspectorRoute) {
-    if (!role || !["INSPECTOR", "ADMIN"].includes(role)) {
-      return NextResponse.redirect(new URL("/login", request.url));
+    if (!session) {
+      return NextResponse.redirect(new URL("/inspector-login", request.url));
+    }
+    if (role !== "INSPECTOR") {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
     }
   }
 
