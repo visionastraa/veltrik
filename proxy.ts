@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only check auth for protected routes
-  const isInspectorRoute = pathname.startsWith("/inspector");
+  const isInspectorRoute = pathname.startsWith("/inspector") && pathname !== "/inspector-login";
   const isAdminRoute = pathname.startsWith("/admin");
 
   if (!isInspectorRoute && !isAdminRoute) {
@@ -32,7 +32,9 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/inspector-login", request.url));
     }
     if (role !== "INSPECTOR") {
-      return NextResponse.redirect(new URL("/unauthorized", request.url));
+      return NextResponse.redirect(
+        new URL(`/unauthorized?from=${encodeURIComponent(pathname)}`, request.url)
+      );
     }
   }
 
