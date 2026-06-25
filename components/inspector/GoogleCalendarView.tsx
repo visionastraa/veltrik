@@ -43,8 +43,7 @@ const timeSlots = [
 ];
 
 export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps) {
-  const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const handlePrevDay = () => {
     setSelectedDate((prev) => {
@@ -72,7 +71,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
     setSelectedDate(tomorrow);
   };
 
-  // Filter bookings by selected day and search terms
+  // Filter bookings by selected day, search terms, and status
   const filteredBookings = bookings.filter((b) => {
     const bookingDate = new Date(b.scheduledAt);
     const dateMatch =
@@ -84,6 +83,11 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
 
     const lead = b.sellerLead;
     const seller = lead?.seller || b.user;
+    const isCompleted = lead?.status === "INSPECTED";
+
+    if (statusFilter === "completed" && !isCompleted) return false;
+    if (statusFilter === "pending" && isCompleted) return false;
+
     const searchTerm = search.toLowerCase();
 
     return (
