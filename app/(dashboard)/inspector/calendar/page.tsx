@@ -15,6 +15,7 @@ export default async function CalendarPage() {
       sellerLead: {
         include: {
           seller: true,
+          inspection: true,
         },
       },
       user: true,
@@ -22,6 +23,15 @@ export default async function CalendarPage() {
     orderBy: {
       scheduledAt: "asc",
     },
+  });
+
+  // Filter so that if an inspection exists, only the assigned inspector can see it
+  const myBookings = bookings.filter((b) => {
+    const inspection = b.sellerLead?.inspection;
+    if (inspection && inspection.inspectorId !== session.user.id) {
+      return false;
+    }
+    return true;
   });
 
   return (
@@ -35,7 +45,7 @@ export default async function CalendarPage() {
         </p>
       </div>
 
-      <GoogleCalendarView bookings={bookings} />
+      <GoogleCalendarView bookings={myBookings} />
     </div>
   );
 }

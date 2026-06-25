@@ -109,9 +109,18 @@ export async function GET() {
       },
     });
 
+    // Filter out bookings that have inspections assigned to other inspectors
+    const myBookings = bookings.filter((b) => {
+      const inspection = b.sellerLead?.inspection;
+      if (inspection && inspection.inspectorId !== inspectorId) {
+        return false;
+      }
+      return true;
+    });
+
     // Calculate today's stats
-    const todaysInspections = bookings.length;
-    const completedToday = bookings.filter(
+    const todaysInspections = myBookings.length;
+    const completedToday = myBookings.filter(
       (b) => b.sellerLead?.status === "INSPECTED" || b.sellerLead?.inspection
     ).length;
     const pending = todaysInspections - completedToday;
@@ -127,7 +136,7 @@ export async function GET() {
     });
 
     // Format schedule list
-    const schedule = bookings.map((b) => {
+    const schedule = myBookings.map((b) => {
       const lead = b.sellerLead;
       const seller = lead?.seller || b.user;
       
