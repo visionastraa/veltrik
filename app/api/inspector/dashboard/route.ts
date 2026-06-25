@@ -21,6 +21,71 @@ export async function GET() {
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
     weekStart.setHours(0, 0, 0, 0);
 
+    // 1. Auto-reschedule missed inspections from the past (before today) to future free slots
+    const missedBookings = await prisma.booking.findMany({
+      where: {
+        type: "SELLER_INSPECTION",
+        scheduledAt: {
+          lt: todayStart,
+        },
+      },
+      include: {
+        sellerLead: {
+          include: {
+            inspection: true,
+          },
+        },
+      },
+    });
+
+    const pendingMissed = missedBookings.filter(
+      (b) => !b.sellerLead?.inspection && b.sellerLead?.status !== "INSPECTED"
+    );
+
+    if (pendingMissed.length > 0) {
+      const hours = [10, 11, 12, 13, 14, 15, 16, 17, 18];
+      
+      const futureBookings = await prisma.booking.findMany({
+        where: {
+          type: "SELLER_INSPECTION",
+          scheduledAt: {
+            gte: todayStart,
+          },
+        },
+        select: {
+          scheduledAt: true,
+        },
+      });
+
+      const occupiedSlots = new Set(
+        futureBookings.map((b) => b.scheduledAt.getTime())
+      );
+
+      let checkDate = new Date(todayStart);
+      
+      for (const booking of pendingMissed) {
+        let found = false;
+        while (!found) {
+          checkDate.setDate(checkDate.getDate() + 1);
+          
+          for (const hour of hours) {
+            const slotTime = new Date(checkDate);
+            slotTime.setHours(hour, 0, 0, 0);
+            
+            if (!occupiedSlots.has(slotTime.getTime())) {
+              await prisma.booking.update({
+                where: { id: booking.id },
+                data: { scheduledAt: slotTime },
+              });
+              occupiedSlots.add(slotTime.getTime());
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     // Fetch today's inspections (Bookings of type SELLER_INSPECTION scheduled for today)
     const bookings = await prisma.booking.findMany({
       where: {
