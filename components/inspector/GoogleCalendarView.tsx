@@ -157,18 +157,32 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
           </div>
         </div>
 
-        {/* Filter Input */}
-        <div className="relative w-full sm:max-w-xs">
-          <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
-            <Search className="size-4" />
-          </span>
-          <input
-            type="text"
-            placeholder="Search details..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.8 rounded-xl border border-border bg-background text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
-          />
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+          {/* Status Dropdown */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full sm:w-auto px-3 py-1.8 rounded-xl border border-border bg-background text-xs outline-none focus:border-ring focus:ring-2"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+
+          {/* Filter Input */}
+          <div className="relative w-full sm:w-48">
+            <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+              <Search className="size-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Search details..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-1.8 rounded-xl border border-border bg-background text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            />
+          </div>
         </div>
       </div>
 
