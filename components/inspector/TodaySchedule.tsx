@@ -9,7 +9,7 @@ interface ScheduleItem {
   sellerPhone: string;
   vehicleName: string;
   sellerLeadId: string;
-  status: "completed" | "in-progress" | "not-started";
+  status: "completed" | "in-progress" | "not-started" | "missed";
 }
 
 interface TodayScheduleProps {
@@ -30,6 +30,12 @@ export default function TodaySchedule({ schedule }: TodayScheduleProps) {
           label: "In Progress",
           badgeClass: "bg-amber-500/10 text-amber-500 border-amber-500/20",
           icon: PlayCircle,
+        };
+      case "missed":
+        return {
+          label: "Missed - Reschedule Required",
+          badgeClass: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+          icon: AlertCircle,
         };
       case "not-started":
       default:
@@ -64,13 +70,10 @@ export default function TodaySchedule({ schedule }: TodayScheduleProps) {
           {schedule.map((item) => {
             const statusConfig = getStatusConfig(item.status);
             const StatusIcon = statusConfig.icon;
+            const isMissed = item.status === "missed";
 
-            return (
-              <Link
-                key={item.id}
-                href={`/inspector/inspect/${item.sellerLeadId}`}
-                className="group flex flex-col md:flex-row md:items-center justify-between py-4.5 gap-4 hover:bg-muted/30 px-3 -mx-3 rounded-xl transition-all duration-200"
-              >
+            const elementContent = (
+              <>
                 {/* Left Side: Time and Vehicle */}
                 <div className="flex items-start gap-4">
                   {/* Time Badge */}
@@ -80,7 +83,10 @@ export default function TodaySchedule({ schedule }: TodayScheduleProps) {
                   </div>
 
                   <div className="space-y-1">
-                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors text-base">
+                    <h3 className={cn(
+                      "font-bold text-foreground text-base transition-colors",
+                      !isMissed && "group-hover:text-primary"
+                    )}>
                       {item.vehicleName}
                     </h3>
                     
@@ -106,10 +112,33 @@ export default function TodaySchedule({ schedule }: TodayScheduleProps) {
                   </span>
 
                   {/* Proceed arrow icon */}
-                  <div className="p-2 rounded-full bg-muted group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 shrink-0">
-                    <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
+                  {!isMissed && (
+                    <div className="p-2 rounded-full bg-muted group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 shrink-0">
+                      <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                  )}
                 </div>
+              </>
+            );
+
+            if (isMissed) {
+              return (
+                <div
+                  key={item.id}
+                  className="flex flex-col md:flex-row md:items-center justify-between py-4.5 gap-4 px-3 -mx-3 rounded-xl border border-dashed border-border/40 opacity-80"
+                >
+                  {elementContent}
+                </div>
+              );
+            }
+
+            return (
+              <Link
+                key={item.id}
+                href={`/inspector/inspect/${item.sellerLeadId}`}
+                className="group flex flex-col md:flex-row md:items-center justify-between py-4.5 gap-4 hover:bg-muted/30 px-3 -mx-3 rounded-xl transition-all duration-200"
+              >
+                {elementContent}
               </Link>
             );
           })}

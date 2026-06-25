@@ -222,6 +222,8 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                     hour12: true,
                   });
 
+                  const isMissed = new Date(booking.scheduledAt).getTime() < Date.now();
+
                   return (
                     <tr key={booking.id} className="group hover:bg-muted/10 transition-colors">
                       <td className="py-4.5 px-6">
@@ -251,19 +253,32 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                         </div>
                       </td>
                       <td className="py-4.5 px-6">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-destructive/20 bg-destructive/10 text-destructive text-[11px] font-semibold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
-                          Pending
-                        </span>
+                        {isMissed ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600 text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                            Missed - Reschedule Required
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-destructive/20 bg-destructive/10 text-destructive text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                            Pending
+                          </span>
+                        )}
                       </td>
                       <td className="py-4.5 px-6 text-right">
-                        <Link
-                          href={`/inspector/inspect/${lead?.id}`}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline group-hover:translate-x-0.5 transition-transform"
-                        >
-                          <span>Open Info</span>
-                          <ArrowRight className="size-3.5" />
-                        </Link>
+                        {isMissed ? (
+                          <span className="text-xs font-semibold text-muted-foreground">
+                            Reschedule Required
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/inspector/inspect/${lead?.id}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline group-hover:translate-x-0.5 transition-transform"
+                          >
+                            <span>Open Info</span>
+                            <ArrowRight className="size-3.5" />
+                          </Link>
+                        )}
                       </td>
                     </tr>
                   );

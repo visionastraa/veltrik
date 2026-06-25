@@ -140,11 +140,12 @@ export async function GET() {
       const lead = b.sellerLead;
       const seller = lead?.seller || b.user;
       
-      let status: "completed" | "in-progress" | "not-started" = "not-started";
+      let status: "completed" | "in-progress" | "not-started" | "missed" = "not-started";
       if (lead?.status === "INSPECTED" || lead?.inspection) {
         status = "completed";
+      } else if (new Date(b.scheduledAt).getTime() < Date.now()) {
+        status = "missed";
       } else if (lead?.status === "SCHEDULED") {
-        // Can represent not-started
         status = "not-started";
       }
 

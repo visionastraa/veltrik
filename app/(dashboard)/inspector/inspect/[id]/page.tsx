@@ -43,6 +43,19 @@ export default async function InspectPage({ params }: InspectPageProps) {
     redirect(`/unauthorized?from=${encodeURIComponent(`/inspector/inspect/${sellerLeadId}`)}`);
   }
 
+  // If the booking is in the past and has not been inspected, it is "missed" and requires admin rescheduling
+  const booking = await prisma.booking.findFirst({
+    where: {
+      sellerLeadId,
+      type: "SELLER_INSPECTION",
+    },
+  });
+
+  const isMissed = booking && new Date(booking.scheduledAt).getTime() < Date.now() && !lead.inspection;
+  if (isMissed && !isAdminOrManager && !isSeller) {
+    redirect(`/unauthorized?from=${encodeURIComponent(`/inspector/inspect/${sellerLeadId}`)}&reason=missed`);
+  }
+
   const vehicleName = `${lead.year} ${lead.brand} ${lead.model}`;
   const sellerName = lead.seller.name || "Unknown Seller";
   const sellerPhone = lead.seller.phone || "";
