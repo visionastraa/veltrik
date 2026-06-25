@@ -73,14 +73,6 @@ export default function InspectorSidebar() {
             );
           })}
         </nav>
-
-        {/* Footer info */}
-        <div className="p-4 border-t border-border bg-muted/30">
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Secure Inspector Node</span>
-          </div>
-        </div>
       </aside>
 
       {/* Backdrop overlay for Mobile/Tablet */}
