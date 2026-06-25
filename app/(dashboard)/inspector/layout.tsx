@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import InspectorSidebar from "@/components/inspector/InspectorSidebar";
 import InspectorHeader from "@/components/inspector/InspectorHeader";
 
@@ -9,8 +10,16 @@ interface InspectorLayoutProps {
 
 export default async function InspectorLayout({ children }: InspectorLayoutProps) {
   const session = await auth();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isInspectPage = pathname.startsWith("/inspector/inspect/");
 
-  if (!session || !session.user || session.user.role !== "INSPECTOR") {
+  if (!session || !session.user) {
+    redirect("/inspector-login");
+  }
+
+  const allowedRoles = isInspectPage ? ["INSPECTOR", "SELLER", "ADMIN", "MANAGER"] : ["INSPECTOR"];
+  if (!allowedRoles.includes(session.user.role)) {
     redirect("/inspector-login");
   }
 
@@ -20,10 +29,12 @@ export default async function InspectorLayout({ children }: InspectorLayoutProps
     image: session.user.image,
   };
 
+  const isInspector = session.user.role === "INSPECTOR";
+
   return (
     <div className="flex h-screen w-screen bg-background overflow-hidden">
       {/* Sidebar Nav */}
-      <InspectorSidebar />
+      {isInspector && <InspectorSidebar />}
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

@@ -6,6 +6,7 @@ interface FormNavigationProps {
   onBack: () => void;
   onNext: () => void;
   isSubmitting?: boolean;
+  readOnly?: boolean;
 }
 
 export default function FormNavigation({
@@ -13,6 +14,7 @@ export default function FormNavigation({
   onBack,
   onNext,
   isSubmitting = false,
+  readOnly = false,
 }: FormNavigationProps) {
   return (
     <div className="flex items-center justify-between border-t border-border pt-6">
@@ -60,7 +62,7 @@ export default function FormNavigation({
           ) : (
             <>
               <Save className="size-4" />
-              <span>Submit Inspection</span>
+              <span>{readOnly ? "Finish Review" : "Submit Inspection"}</span>
             </>
           )}
         </Button>

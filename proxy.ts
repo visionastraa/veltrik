@@ -26,12 +26,14 @@ export async function proxy(request: NextRequest) {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  // Inspector routes: only INSPECTOR
+  // Inspector routes: only INSPECTOR, except inspect detail page which allows SELLER/ADMIN/MANAGER
   if (isInspectorRoute) {
     if (!session) {
       return NextResponse.redirect(new URL("/inspector-login", request.url));
     }
-    if (role !== "INSPECTOR") {
+    const isInspectPage = pathname.startsWith("/inspector/inspect/");
+    const allowedRoles = isInspectPage ? ["INSPECTOR", "SELLER", "ADMIN", "MANAGER"] : ["INSPECTOR"];
+    if (!role || !allowedRoles.includes(role)) {
       return NextResponse.redirect(
         new URL(`/unauthorized?from=${encodeURIComponent(pathname)}`, request.url)
       );
@@ -45,7 +47,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {
