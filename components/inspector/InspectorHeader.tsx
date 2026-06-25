@@ -1,7 +1,7 @@
 "use client";
 
 import { signOut } from "next-auth/react";
-import { LogOut, User, Bell } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface InspectorHeaderProps {
@@ -36,14 +36,6 @@ export default function InspectorHeader({ user }: InspectorHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        {/* Notifications Icon (Decorative) */}
-        <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors relative cursor-pointer">
-          <Bell className="size-4.5" />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-destructive rounded-full" />
-        </button>
-
-        <div className="h-8 w-px bg-border" />
-
         {/* User Info & Avatar */}
         <div className="flex items-center gap-3">
           <div className="flex flex-col text-right hidden sm:block">
