@@ -32,10 +32,12 @@ interface HistoryTableProps {
 export default function HistoryTable({ inspections }: HistoryTableProps) {
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [mileageFilter, setMileageFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Filter inspections based on search query and rating
+  // Filter inspections based on search query, rating, and mileage
   const filteredInspections = inspections.filter((ins) => {
     const lead = ins.sellerLead;
     const seller = lead?.seller;
@@ -44,18 +46,39 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
     const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
     const modelMatch = lead?.model.toLowerCase().includes(searchTerm) || false;
     const nameMatch = seller?.name?.toLowerCase().includes(searchTerm) || false;
+    const textMatch = brandMatch || modelMatch || nameMatch;
+
+    if (!textMatch) return false;
     
     const ratingMatch = 
       ratingFilter === "all" || 
       ins.testDriveRating === parseInt(ratingFilter);
 
-    return (brandMatch || modelMatch || nameMatch) && ratingMatch;
+    if (!ratingMatch) return false;
+
+    // Mileage filter
+    if (mileageFilter === "under10") {
+      if (ins.kmDriven >= 10000) return false;
+    } else if (mileageFilter === "10to50") {
+      if (ins.kmDriven < 10000 || ins.kmDriven > 50000) return false;
+    } else if (mileageFilter === "over50") {
+      if (ins.kmDriven <= 50000) return false;
+    }
+
+    return true;
+  });
+
+  // Sort inspections
+  const sortedInspections = [...filteredInspections].sort((a, b) => {
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredInspections.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(sortedInspections.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
-  const paginatedInspections = filteredInspections.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedInspections = sortedInspections.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <div className="space-y-4">
@@ -79,7 +102,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
         </div>
 
         {/* Rating filter */}
-        <div className="sm:w-48">
+        <div className="sm:w-44">
           <select
             value={ratingFilter}
             onChange={(e) => {
@@ -94,6 +117,38 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
             <option value="3">3 Stars</option>
             <option value="2">2 Stars</option>
             <option value="1">1 Star</option>
+          </select>
+        </div>
+
+        {/* Mileage filter */}
+        <div className="sm:w-44">
+          <select
+            value={mileageFilter}
+            onChange={(e) => {
+              setMileageFilter(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+          >
+            <option value="all">All Mileage</option>
+            <option value="under10">Under 10,000 km</option>
+            <option value="10to50">10,000 - 50,000 km</option>
+            <option value="over50">Over 50,000 km</option>
+          </select>
+        </div>
+
+        {/* Sort Order filter */}
+        <div className="sm:w-44">
+          <select
+            value={sortOrder}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+          >
+            <option value="desc">Newest First</option>
+            <option value="asc">Oldest First</option>
           </select>
         </div>
       </div>
