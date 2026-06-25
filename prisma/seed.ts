@@ -11,6 +11,12 @@ if (!process.env.DATABASE_URL) {
 async function main() {
   const { prisma } = await import("../lib/prisma");
 
+  // 0. Clean up existing data first
+  console.log("Cleaning up existing data...");
+  await prisma.inspection.deleteMany({});
+  await prisma.booking.deleteMany({});
+  await prisma.sellerLead.deleteMany({});
+
   const passwordHash = await bcrypt.hash("password123", 10);
 
   // 1. Seed Inspectors
@@ -37,6 +43,9 @@ async function main() {
     console.log(`Created/Ensured inspector: ${user.name} (${user.email})`);
   }
 
+  const alice = inspectors[0];
+  const bob = inspectors[1];
+
   // 2. Seed a Seller User
   console.log("Seeding seller user...");
   const seller = await prisma.user.upsert({
@@ -54,13 +63,13 @@ async function main() {
   });
 
   // 3. Seed SellerLeads & Bookings for Today
-  console.log("Seeding leads and bookings...");
+  console.log("Seeding leads, bookings, and inspections...");
   const today = new Date();
   
   const leadData = [
-    { brand: "Ola", model: "S1 Pro Gen 2", year: 2023, askingPrice: 120000, hour: 10, minute: 0 },
-    { brand: "Ather", model: "450X", year: 2022, askingPrice: 110000, hour: 12, minute: 30 },
-    { brand: "TVS", model: "iQube S", year: 2023, askingPrice: 95000, hour: 15, minute: 0 },
+    { brand: "Ola", model: "S1 Pro Gen 2", year: 2023, askingPrice: 120000, hour: 10, minute: 0, status: "INSPECTED", assignedInspector: alice },
+    { brand: "Ather", model: "450X", year: 2022, askingPrice: 110000, hour: 12, minute: 30, status: "INSPECTED", assignedInspector: bob },
+    { brand: "TVS", model: "iQube S", year: 2023, askingPrice: 95000, hour: 15, minute: 0, status: "SCHEDULED", assignedInspector: null },
   ];
 
   for (const data of leadData) {
@@ -71,7 +80,7 @@ async function main() {
         model: data.model,
         year: data.year,
         askingPrice: data.askingPrice,
-        status: "SCHEDULED",
+        status: data.status as any,
         photos: "[]",
         sellerId: seller.id,
       },
@@ -91,7 +100,35 @@ async function main() {
       },
     });
 
-    console.log(`Created ${data.brand} ${data.model} booking at ${data.hour}:${data.minute === 0 ? "00" : data.minute}`);
+    // If it has an assigned inspector, create an Inspection record
+    if (data.assignedInspector) {
+      await prisma.inspection.create({
+        data: {
+          ageYears: 1,
+          ageMonths: 4,
+          kmDriven: 5600,
+          bodyDamage: "minor",
+          bodyDamagePhoto: "",
+          forkDamage: false,
+          accidentHistory: "clean",
+          warrantyStatus: "under_warranty",
+          warrantyType: "brand",
+          partsReplaced: false,
+          batteryCharge: 98,
+          batteryHealth: 95,
+          batteryVoltage: 48.5,
+          physicalDamage: false,
+          brakeSystem: "pass",
+          brakePads: "good",
+          wheelAlignment: "aligned",
+          testDriveRating: 5,
+          sellerLeadId: lead.id,
+          inspectorId: data.assignedInspector.id,
+        },
+      });
+    }
+
+    console.log(`Created ${data.brand} ${data.model} booking. Status: ${data.status}. Assigned Inspector: ${data.assignedInspector?.name || "None"}`);
   }
 
   console.log("Seeding completed successfully.");
