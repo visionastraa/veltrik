@@ -30,10 +30,12 @@ interface QueueTableProps {
 
 export default function QueueTable({ bookings }: QueueTableProps) {
   const [search, setSearch] = useState("");
+  const [timeFilter, setTimeFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Filter bookings based on search query
+  // Filter bookings based on search query and time of day
   const filteredBookings = bookings.filter((b) => {
     const lead = b.sellerLead;
     const seller = lead?.seller || b.user;
@@ -42,14 +44,31 @@ export default function QueueTable({ bookings }: QueueTableProps) {
     const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
     const modelMatch = lead?.model.toLowerCase().includes(searchTerm) || false;
     const nameMatch = seller?.name?.toLowerCase().includes(searchTerm) || false;
+    const textMatch = brandMatch || modelMatch || nameMatch;
 
-    return brandMatch || modelMatch || nameMatch;
+    if (!textMatch) return false;
+
+    const bookingDate = new Date(b.scheduledAt);
+    const hour = bookingDate.getHours();
+
+    if (timeFilter === "morning" && hour >= 12) return false;
+    if (timeFilter === "afternoon" && (hour < 12 || hour >= 16)) return false;
+    if (timeFilter === "evening" && hour < 16) return false;
+
+    return true;
+  });
+
+  // Sort bookings
+  const sortedBookings = [...filteredBookings].sort((a, b) => {
+    const dateA = new Date(a.scheduledAt).getTime();
+    const dateB = new Date(b.scheduledAt).getTime();
+    return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
   });
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage) || 1;
+  const totalPages = Math.ceil(sortedBookings.length / itemsPerPage) || 1;
   const startIndex = (page - 1) * itemsPerPage;
-  const paginatedBookings = filteredBookings.slice(startIndex, startIndex + itemsPerPage);
+  const paginatedBookings = sortedBookings.slice(startIndex, startIndex + itemsPerPage);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
@@ -59,17 +78,52 @@ export default function QueueTable({ bookings }: QueueTableProps) {
   return (
     <div className="space-y-4">
       {/* Filters Area */}
-      <div className="relative max-w-md">
-        <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
-          <Search className="size-4" />
-        </span>
-        <input
-          type="text"
-          placeholder="Filter by brand, model, or seller name..."
-          value={search}
-          onChange={handleSearchChange}
-          className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
-        />
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+            <Search className="size-4" />
+          </span>
+          <input
+            type="text"
+            placeholder="Filter by brand, model, or seller name..."
+            value={search}
+            onChange={handleSearchChange}
+            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+          />
+        </div>
+
+        {/* Time Filter */}
+        <div className="sm:w-44">
+          <select
+            value={timeFilter}
+            onChange={(e) => {
+              setTimeFilter(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+          >
+            <option value="all">All Times</option>
+            <option value="morning">Morning (&lt; 12 PM)</option>
+            <option value="afternoon">Afternoon (12 - 4 PM)</option>
+            <option value="evening">Evening (&gt; 4 PM)</option>
+          </select>
+        </div>
+
+        {/* Sort Filter */}
+        <div className="sm:w-44">
+          <select
+            value={sortOrder}
+            onChange={(e) => {
+              setSortOrder(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+          >
+            <option value="asc">Date Ascending</option>
+            <option value="desc">Date Descending</option>
+          </select>
+        </div>
       </div>
 
       {/* Table grid */}
