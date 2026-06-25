@@ -21,34 +21,49 @@ export async function POST(request: Request) {
     // Convert date string to Date object if provided
     const warrantyExpiry = checklist.warrantyExpiry ? new Date(checklist.warrantyExpiry) : null;
 
-    // Create the Inspection checklist record
-    const inspection = await prisma.inspection.create({
-      data: {
-        ageYears: parseInt(checklist.ageYears) || 0,
-        ageMonths: parseInt(checklist.ageMonths) || 0,
-        kmDriven: parseFloat(checklist.kmDriven) || 0,
-        bodyDamage: checklist.bodyDamage || "pass",
-        bodyDamagePhoto: checklist.bodyDamagePhoto || "",
-        forkDamage: !!checklist.forkDamage,
-        accidentHistory: checklist.accidentHistory || "clean",
-        warrantyStatus: checklist.warrantyStatus || "out_of_warranty",
-        warrantyType: checklist.warrantyType || "",
-        warrantyExpiry,
-        partsReplaced: !!checklist.partsReplaced,
-        replacedParts: checklist.replacedParts || "",
-        adminComments: checklist.adminComments || "",
-        batteryCharge: parseFloat(checklist.batteryCharge) || 0,
-        batteryHealth: parseFloat(checklist.batteryHealth) || 0,
-        batteryVoltage: parseFloat(checklist.batteryVoltage) || 0,
-        physicalDamage: !!checklist.physicalDamage,
-        brakeSystem: checklist.brakeSystem || "pass",
-        brakePads: checklist.brakePads || "good",
-        wheelAlignment: checklist.wheelAlignment || "aligned",
-        testDriveRating: parseInt(checklist.testDriveRating) || 0,
-        testDriveNotes: checklist.testDriveNotes || "",
-        techComments: checklist.techComments || "",
+    // Verify ownership of the inspection if it already exists
+    const existing = await prisma.inspection.findUnique({
+      where: { sellerLeadId },
+    });
+
+    if (existing && existing.inspectorId !== inspectorId) {
+      return NextResponse.json({ error: "Forbidden: This inspection belongs to another inspector" }, { status: 403 });
+    }
+
+    const dataObj = {
+      ageYears: parseInt(checklist.ageYears) || 0,
+      ageMonths: parseInt(checklist.ageMonths) || 0,
+      kmDriven: parseFloat(checklist.kmDriven) || 0,
+      bodyDamage: checklist.bodyDamage || "pass",
+      bodyDamagePhoto: checklist.bodyDamagePhoto || "",
+      forkDamage: !!checklist.forkDamage,
+      accidentHistory: checklist.accidentHistory || "clean",
+      warrantyStatus: checklist.warrantyStatus || "out_of_warranty",
+      warrantyType: checklist.warrantyType || "",
+      warrantyExpiry,
+      partsReplaced: !!checklist.partsReplaced,
+      replacedParts: checklist.replacedParts || "",
+      adminComments: checklist.adminComments || "",
+      batteryCharge: parseFloat(checklist.batteryCharge) || 0,
+      batteryHealth: parseFloat(checklist.batteryHealth) || 0,
+      batteryVoltage: parseFloat(checklist.batteryVoltage) || 0,
+      physicalDamage: !!checklist.physicalDamage,
+      brakeSystem: checklist.brakeSystem || "pass",
+      brakePads: checklist.brakePads || "good",
+      wheelAlignment: checklist.wheelAlignment || "aligned",
+      testDriveRating: parseInt(checklist.testDriveRating) || 0,
+      testDriveNotes: checklist.testDriveNotes || "",
+      techComments: checklist.techComments || "",
+      inspectorId: inspectorId as string,
+    };
+
+    // Upsert the Inspection checklist record
+    const inspection = await prisma.inspection.upsert({
+      where: { sellerLeadId },
+      update: dataObj,
+      create: {
+        ...dataObj,
         sellerLeadId,
-        inspectorId: inspectorId as string,
       },
     });
 
