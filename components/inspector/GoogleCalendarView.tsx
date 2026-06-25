@@ -43,6 +43,8 @@ const timeSlots = [
 ];
 
 export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps) {
+  const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [statusFilter, setStatusFilter] = useState("all");
 
   const handlePrevDay = () => {
