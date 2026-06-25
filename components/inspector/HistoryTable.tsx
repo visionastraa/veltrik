@@ -34,10 +34,12 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
   const [ratingFilter, setRatingFilter] = useState("all");
   const [mileageFilter, setMileageFilter] = useState("all");
   const [sortOrder, setSortOrder] = useState("desc");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Filter inspections based on search query, rating, and mileage
+  // Filter inspections based on search query, rating, mileage, and date range
   const filteredInspections = inspections.filter((ins) => {
     const lead = ins.sellerLead;
     const seller = lead?.seller;
@@ -65,6 +67,19 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
       if (ins.kmDriven <= 50000) return false;
     }
 
+    // Date range checking
+    const inspectionDate = new Date(ins.createdAt);
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      if (inspectionDate < start) return false;
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      if (inspectionDate > end) return false;
+    }
+
     return true;
   });
 
@@ -83,73 +98,120 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
   return (
     <div className="space-y-4">
       {/* Filters Area */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
-            <Search className="size-4" />
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground">
+              <Search className="size-4" />
+            </span>
+            <input
+              type="text"
+              placeholder="Filter by brand, model, or seller name..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            />
+          </div>
+
+          {/* Rating filter */}
+          <div className="sm:w-44">
+            <select
+              value={ratingFilter}
+              onChange={(e) => {
+                setRatingFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+            >
+              <option value="all">All Ratings</option>
+              <option value="5">5 Stars</option>
+              <option value="4">4 Stars</option>
+              <option value="3">3 Stars</option>
+              <option value="2">2 Stars</option>
+              <option value="1">1 Star</option>
+            </select>
+          </div>
+
+          {/* Mileage filter */}
+          <div className="sm:w-44">
+            <select
+              value={mileageFilter}
+              onChange={(e) => {
+                setMileageFilter(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+            >
+              <option value="all">All Mileage</option>
+              <option value="under10">Under 10,000 km</option>
+              <option value="10to50">10,000 - 50,000 km</option>
+              <option value="over50">Over 50,000 km</option>
+            </select>
+          </div>
+
+          {/* Sort Order filter */}
+          <div className="sm:w-44">
+            <select
+              value={sortOrder}
+              onChange={(e) => {
+                setSortOrder(e.target.value);
+                setPage(1);
+              }}
+              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+            >
+              <option value="desc">Newest First</option>
+              <option value="asc">Oldest First</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Date Range Fields */}
+        <div className="flex flex-wrap items-center gap-3 bg-muted/20 border border-border/60 rounded-xl p-3">
+          <span className="text-xs font-bold text-muted-foreground tracking-wider uppercase flex items-center gap-1">
+            <Calendar className="size-3.5" />
+            Date Range:
           </span>
-          <input
-            type="text"
-            placeholder="Filter by brand, model, or seller name..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
-          />
-        </div>
+          
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-1.5 rounded-lg border border-border bg-card text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            />
+            <span className="text-xs text-muted-foreground">to</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-1.5 rounded-lg border border-border bg-card text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
+            />
+          </div>
 
-        {/* Rating filter */}
-        <div className="sm:w-44">
-          <select
-            value={ratingFilter}
-            onChange={(e) => {
-              setRatingFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
-          >
-            <option value="all">All Ratings</option>
-            <option value="5">5 Stars</option>
-            <option value="4">4 Stars</option>
-            <option value="3">3 Stars</option>
-            <option value="2">2 Stars</option>
-            <option value="1">1 Star</option>
-          </select>
-        </div>
-
-        {/* Mileage filter */}
-        <div className="sm:w-44">
-          <select
-            value={mileageFilter}
-            onChange={(e) => {
-              setMileageFilter(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
-          >
-            <option value="all">All Mileage</option>
-            <option value="under10">Under 10,000 km</option>
-            <option value="10to50">10,000 - 50,000 km</option>
-            <option value="over50">Over 50,000 km</option>
-          </select>
-        </div>
-
-        {/* Sort Order filter */}
-        <div className="sm:w-44">
-          <select
-            value={sortOrder}
-            onChange={(e) => {
-              setSortOrder(e.target.value);
-              setPage(1);
-            }}
-            className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
-          >
-            <option value="desc">Newest First</option>
-            <option value="asc">Oldest First</option>
-          </select>
+          {(startDate || endDate) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setPage(1);
+              }}
+              className="text-xs font-bold cursor-pointer text-destructive hover:bg-destructive/10"
+            >
+              Clear Date Filter
+            </Button>
+          )}
         </div>
       </div>
 
