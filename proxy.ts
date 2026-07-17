@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only check auth for protected routes
-  const isInspectorRoute = pathname.startsWith("/inspector");
+  const isInspectorRoute = pathname.startsWith("/inspector") && pathname !== "/inspector-login";
   const isAdminRoute = pathname.startsWith("/admin");
 
   if (!isInspectorRoute && !isAdminRoute) {
@@ -26,10 +26,17 @@ export async function proxy(request: NextRequest) {
   const session = await auth();
   const role = (session?.user as { role?: string } | undefined)?.role;
 
-  // Inspector routes: only INSPECTOR and ADMIN
+  // Inspector routes: only INSPECTOR, except inspect detail page which allows SELLER/ADMIN/MANAGER
   if (isInspectorRoute) {
-    if (!role || !["INSPECTOR", "ADMIN"].includes(role)) {
-      return NextResponse.redirect(new URL("/login", request.url));
+    if (!session) {
+      return NextResponse.redirect(new URL("/inspector-login", request.url));
+    }
+    const isInspectPage = pathname.startsWith("/inspector/inspect/");
+    const allowedRoles = isInspectPage ? ["INSPECTOR", "SELLER", "ADMIN", "MANAGER"] : ["INSPECTOR"];
+    if (!role || !allowedRoles.includes(role)) {
+      return NextResponse.redirect(
+        new URL(`/unauthorized?from=${encodeURIComponent(pathname)}`, request.url)
+      );
     }
   }
 
@@ -40,7 +47,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 }
 
 export const config = {
