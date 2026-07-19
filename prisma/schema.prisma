@@ -1,0 +1,248 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  BUYER
+  SELLER
+  INSPECTOR
+  ADMIN
+  MANAGER
+}
+
+enum SellerStatus {
+  SUBMITTED
+  SCHEDULED
+  INSPECTED
+  OFFER_MADE
+  ACQUIRED
+  REJECTED
+}
+
+enum ListingStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum BookingType {
+  SELLER_INSPECTION
+  BUYER_VISIT
+}
+
+enum BuyerStatus {
+  LEAD_VISIT_SCHEDULED
+  FOLLOW_UP_REQUIRED
+  CONVERTED
+  LOST
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String?
+  phone     String?
+  role      Role     @default(BUYER)
+  emailVerified DateTime?
+  image     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sellerLeads SellerLead[]
+  buyerLeads  BuyerLead[]
+  bookings    Booking[]
+  inspections Inspection[] @relation("InspectorInspections")
+  approvedInspections Inspection[] @relation("ApprovedInspections")
+  payments    Payment[]
+  activityLogs ActivityLog[]
+
+  @@map("users")
+}
+
+model SellerLead {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id])
+  
+  make           String
+  model          String
+  variant        String
+  vehicleNumber  String
+  year           Int
+  kmDriven       Int
+  warrantyStatus String
+  expectedPrice  Float
+  description    String?
+  photos         String[]
+  status         SellerStatus   @default(SUBMITTED)
+  scheduledAt    DateTime?
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  inspection   Inspection?
+  bookings     Booking[]
+  
+  @@map("seller_leads")
+}
+
+model Inspection {
+  id             String   @id @default(cuid())
+  sellerLeadId   String   @unique
+  sellerLead     SellerLead @relation(fields: [sellerLeadId], references: [id])
+  
+  // Admin & Visual Checks
+  ageYears            Int?
+  ageMonths           Int?
+  kmDriven            Int?
+  bodyDamage          String?
+  bodyDamagePhoto     String?
+  forkDamage          Boolean?
+  accidentHistory     String?
+  warrantyStatus      String?
+  warrantyType        String?
+  warrantyExpiry      DateTime?
+  partsReplaced       Boolean?
+  replacedParts       String?
+  adminComments       String?
+  
+  // Technical & Performance
+  batteryCharge      Float?
+  batteryHealth      Float?
+  batteryVoltage     Float?
+  physicalDamage     Boolean?
+  brakeSystem        String?
+  brakePads          String?
+  wheelAlignment     String?
+  testDriveRating    Int?
+  testDriveNotes     String?
+  techComments       String?
+  
+  // Appraisal
+  finalOffer         Float?
+  approvedById       String?
+  approvedBy         User?    @relation("ApprovedInspections", fields: [approvedById], references: [id])
+  approvedAt         DateTime?
+  
+  // Metadata
+  inspectorId        String
+  inspector          User     @relation("InspectorInspections", fields: [inspectorId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  
+  // Relations
+  listing            Listing?
+  
+  @@map("inspections")
+}
+
+model Listing {
+  id             String         @id @default(cuid())
+  inspectionId   String         @unique
+  inspection     Inspection     @relation(fields: [inspectionId], references: [id])
+  
+  title          String
+  price          Float
+  status         ListingStatus  @default(AVAILABLE)
+  photos         String[]
+  publishedAt    DateTime?
+  
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  
+  // Relations
+  buyerLeads     BuyerLead[]
+  bookings       Booking[]
+  
+  @@map("listings")
+}
+
+model BuyerLead {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id])
+  
+  listingId         String?
+  listing           Listing?    @relation(fields: [listingId], references: [id])
+  
+  brandsInterested  String[]
+  modelsInterested  String[]
+  status            BuyerStatus @default(LEAD_VISIT_SCHEDULED)
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  
+  // Relations
+  bookings          Booking[]
+  
+  @@map("buyer_leads")
+}
+
+model Booking {
+  id             String      @id @default(cuid())
+  type           BookingType
+  
+  // For seller inspections
+  sellerLeadId   String?
+  sellerLead     SellerLead? @relation(fields: [sellerLeadId], references: [id])
+  
+  // For buyer visits
+  buyerLeadId    String?
+  buyerLead      BuyerLead?  @relation(fields: [buyerLeadId], references: [id])
+  
+  listingId      String?
+  listing        Listing?    @relation(fields: [listingId], references: [id])
+  
+  scheduledAt    DateTime
+  status         String      @default("confirmed")
+  
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  
+  // Relations
+  payment        Payment?
+  
+  @@map("bookings")
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  razorpayOrderId String @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+  amount         Float
+  currency       String   @default("INR")
+  status         String   @default("created")
+  bookingId      String?   @unique
+  booking        Booking? @relation(fields: [bookingId], references: [id])
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  @@map("payments")
+}
+
+model ActivityLog {
+  id             String   @id @default(cuid())
+  action         String
+  description    String
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  
+  @@map("activity_logs")
+}
