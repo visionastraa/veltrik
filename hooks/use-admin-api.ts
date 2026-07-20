@@ -42,6 +42,7 @@ export interface SellerLeadData {
   scheduledAt: string | null
   createdAt: string
   updatedAt: string
+  inspection?: { id: string } | null
 }
 
 export interface BuyerLeadData {

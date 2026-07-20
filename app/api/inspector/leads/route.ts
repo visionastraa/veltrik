@@ -12,6 +12,12 @@ export async function GET() {
 
     const leads = await prisma.sellerLead.findMany({
       where: { status: { in: ["SCHEDULED", "SUBMITTED"] } },
+      include: {
+        user: { select: { name: true, email: true } },
+        inspection: {
+          include: { approvedBy: { select: { name: true, email: true } } },
+        },
+      },
       orderBy: { scheduledAt: "asc" },
     })
 

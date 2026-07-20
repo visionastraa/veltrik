@@ -140,18 +140,18 @@ function getGreeting() {
 
 function StatCard({ stat }: { stat: typeof stats[0] }) {
   return (
-    <motion.div whileHover={{ y: -4 }} className="group">
-      <Card className="p-4 border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm">
+    <motion.div whileHover={{ y: -4 }} className="group min-w-0">
+      <Card className="p-4 h-full border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white/80 backdrop-blur-sm">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="text-sm text-gray-500 font-medium uppercase tracking-wider">{stat.label}</p>
+          <div className="min-w-0">
+            <p className="text-sm text-gray-500 font-medium uppercase tracking-wider truncate">{stat.label}</p>
             <p className="text-2xl font-bold mt-1">{stat.value}</p>
             <div className={cn("flex items-center gap-1 text-xs mt-1", stat.trend === "up" ? "text-green-500" : "text-red-500")}>
               {stat.trend === "up" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
               {stat.change}
             </div>
           </div>
-          <div className={cn("p-3 rounded-lg", stat.color.replace("text", "bg") + "/10")}>
+          <div className={cn("p-3 rounded-lg flex-shrink-0", stat.color.replace("text", "bg") + "/10")}>
             <stat.icon className={cn("w-5 h-5", stat.color)} />
           </div>
         </div>

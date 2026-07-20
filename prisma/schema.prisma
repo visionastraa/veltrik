@@ -63,6 +63,10 @@ model User {
   approvedInspections Inspection[] @relation("ApprovedInspections")
   payments    Payment[]
   activityLogs ActivityLog[]
+  conversationsAsBuyer Conversation[] @relation("BuyerConversations")
+  conversationsAsSeller Conversation[] @relation("SellerConversations")
+  messages     Message[]
+  wishlists    Wishlist[]
 
   @@map("users")
 }
@@ -162,7 +166,9 @@ model Listing {
   // Relations
   buyerLeads     BuyerLead[]
   bookings       Booking[]
-  
+  conversations  Conversation[]
+  wishlists      Wishlist[]
+
   @@map("listings")
 }
 
@@ -243,6 +249,51 @@ model ActivityLog {
   user           User     @relation(fields: [userId], references: [id])
   metadata       Json?
   createdAt      DateTime @default(now())
-  
+
   @@map("activity_logs")
+}
+
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  listing Listing @relation(fields: [listingId], references: [id])
+
+  @@unique([userId, listingId])
+  @@map("wishlists")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  subject   String?
+  listingId String?
+  buyerId   String
+  sellerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  buyer    User      @relation("BuyerConversations", fields: [buyerId], references: [id])
+  seller   User      @relation("SellerConversations", fields: [sellerId], references: [id])
+  listing  Listing?  @relation(fields: [listingId], references: [id])
+  messages Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  sender       User         @relation(fields: [senderId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { inspectionSubmitSchema } from "@/lib/validations/inspection"
+import { emitToUser } from "@/lib/socket-emitter"
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,11 @@ export async function POST(request: NextRequest) {
       data: { status: "INSPECTED" },
     })
 
+    const sellerLead = await prisma.sellerLead.findUnique({
+      where: { id: validated.sellerLeadId },
+      select: { userId: true },
+    })
+
     await prisma.activityLog.create({
       data: {
         action: "Inspection Submitted",
@@ -58,6 +64,14 @@ export async function POST(request: NextRequest) {
         metadata: { inspectionId: inspection.id, sellerLeadId: validated.sellerLeadId },
       },
     })
+
+    if (sellerLead?.userId) {
+      emitToUser(sellerLead.userId, "notification:new", {
+        type: "inspection",
+        title: "Inspection Submitted",
+        message: "Your vehicle inspection has been submitted for review.",
+      })
+    }
 
     return NextResponse.json({ success: true, inspection })
   } catch (error) {

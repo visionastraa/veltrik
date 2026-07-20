@@ -24,6 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 16 },
@@ -32,42 +33,42 @@ const fadeIn = {
 
 const BANKS = [
   {
+    name: "SBI",
+    rate: 8.5,
+    maxAmount: "₹50 Lakh",
+    tenure: "Up to 84 months",
+    processingFee: "₹3,500",
+    features: ["Lowest processing fee", "Govt-backed trust", "EV subsidy schemes", "Branch pan-India"],
+    color: "text-blue-800",
+    bg: "bg-blue-50",
+  },
+  {
     name: "HDFC Bank",
-    rate: 7.5,
-    maxAmount: "₹80 Lakh",
+    rate: 9.2,
+    maxAmount: "₹70 Lakh",
     tenure: "Up to 84 months",
     processingFee: "₹4,999",
-    features: ["Lowest interest rate", "Quick approval in 24h", "Flexible EMI options", "No foreclosure charges"],
+    features: ["Quick approval in 24h", "Flexible EMI options", "Balance transfer facility", "No foreclosure charges"],
     color: "text-blue-600",
     bg: "bg-blue-50",
   },
   {
     name: "ICICI Bank",
-    rate: 7.9,
-    maxAmount: "₹75 Lakh",
+    rate: 9.5,
+    maxAmount: "₹60 Lakh",
     tenure: "Up to 72 months",
     processingFee: "₹5,499",
-    features: ["100% online process", "Zero documentation", "Pre-approved offers", "Balance transfer option"],
+    features: ["100% online process", "Zero documentation", "Pre-approved offers", "Dedicated RM"],
     color: "text-orange-600",
     bg: "bg-orange-50",
   },
   {
-    name: "SBI",
-    rate: 8.2,
-    maxAmount: "₹70 Lakh",
-    tenure: "Up to 84 months",
-    processingFee: "₹3,999",
-    features: ["Government bank trust", "Lowest processing fee", "EV-specific schemes", "Longer tenure available"],
-    color: "text-blue-800",
-    bg: "bg-blue-50",
-  },
-  {
     name: "Axis Bank",
-    rate: 8.5,
-    maxAmount: "₹65 Lakh",
+    rate: 10.2,
+    maxAmount: "₹55 Lakh",
     tenure: "Up to 60 months",
     processingFee: "₹5,999",
-    features: ["Instant e-approval", "Step-up EMI option", "Insurance bundled deals", "Dedicated relationship manager"],
+    features: ["Instant e-approval", "Step-up EMI option", "Insurance bundled deals", "Special EV rates"],
     color: "text-red-600",
     bg: "bg-red-50",
   },
@@ -106,6 +107,8 @@ function formatINR(n: number) {
 }
 
 export default function FinancingPage() {
+  const { toast } = useToast();
+
   // Loan calculator state
   const [vehiclePrice, setVehiclePrice] = useState(1500000);
   const [downPaymentPct, setDownPaymentPct] = useState(20);
@@ -267,7 +270,7 @@ export default function FinancingPage() {
                       </div>
                     </div>
                   </div>
-                  <Button className="mt-8 w-full bg-white text-emerald-700 hover:bg-emerald-50 font-semibold">
+                  <Button className="mt-8 w-full bg-white text-emerald-700 hover:bg-emerald-50 font-semibold" onClick={() => toast({ title: "Coming soon", description: "Loan application will be available shortly." })}>
                     Apply for Loan <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>
@@ -314,7 +317,7 @@ export default function FinancingPage() {
                         </li>
                       ))}
                     </ul>
-                    <Button className="w-full mt-2" variant="outline">
+                    <Button className="w-full mt-2" variant="outline" onClick={() => toast({ title: "Application submitted", description: "We've received your request. The bank will contact you soon." })}>
                       Apply Now <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -388,7 +391,7 @@ export default function FinancingPage() {
                       ≈ {formatINR(insPremium / 12)}/month
                     </p>
                   )}
-                  <Button className="w-full max-w-xs" disabled={!insValue}>
+                  <Button className="w-full max-w-xs" disabled={!insValue} onClick={() => toast({ title: "Coming soon", description: "Insurance quote generation will be available shortly." })}>
                     Get Insurance Quote <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </CardContent>

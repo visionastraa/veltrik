@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { SEARCH_SUGGESTIONS } from "@/lib/search-parser"
 
 const quickActions = [
-  { label: 'Find EV', icon: Search, href: '/user', color: 'bg-primary/10 text-primary' },
+  { label: 'Find EV', icon: Search, href: '/inventory', color: 'bg-primary/10 text-primary' },
   { label: 'Sell EV', icon: TrendingUp, href: '/sell', color: 'bg-green-500/10 text-green-500' },
   { label: 'Book Test Drive', icon: Calendar, href: '/user/bookings', color: 'bg-blue-500/10 text-blue-500' },
   { label: 'Compare EVs', icon: GitBranch, href: '/compare', color: 'bg-indigo-500/10 text-indigo-500' },
@@ -181,6 +181,7 @@ export default function UnifiedUserDashboard() {
   const [page, setPage] = useState(1)
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000000])
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
+  const [aiQuery, setAiQuery] = useState("")
   const compareStore = useCompareStore()
 
   const { data: vehiclesData, isLoading } = useVehicles({
@@ -348,8 +349,28 @@ export default function UnifiedUserDashboard() {
                 <Button variant="outline" className="w-full justify-start text-sm" onClick={() => { setBrand(''); setPriceRange([0, 2000000]); setSearch(''); setPage(1) }}><DollarSign className="w-4 h-4 mr-2 text-primary" />Budget under 20L</Button>
               </div>
               <div className="relative">
-                <Input placeholder="Type your question..." className="pr-24" />
-                <Button size="sm" className="absolute right-1 top-1">Ask</Button>
+                <Input
+                  placeholder="Type your question..."
+                  className="pr-24"
+                  value={aiQuery}
+                  onChange={(e) => setAiQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setSearch(aiQuery)
+                      setIsFilterSheetOpen(false)
+                      setAiQuery("")
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="absolute right-1 top-1"
+                  onClick={() => {
+                    setSearch(aiQuery)
+                    setIsFilterSheetOpen(false)
+                    setAiQuery("")
+                  }}
+                >Ask</Button>
               </div>
             </div>
           </DialogContent>

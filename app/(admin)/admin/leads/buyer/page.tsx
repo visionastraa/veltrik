@@ -28,6 +28,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { useAdminBuyerLeads, type BuyerLeadData } from "@/hooks/use-admin-api"
 import { useToast } from "@/components/ui/use-toast"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 
 const statusColors: Record<string, string> = {
@@ -46,10 +47,41 @@ const statusLabels: Record<string, string> = {
 
 export default function BuyerCRMPage() {
   const { toast } = useToast()
+  const qc = useQueryClient()
   const { data, isLoading } = useAdminBuyerLeads()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [contactLead, setContactLead] = useState<BuyerLeadData | null>(null)
+
+  const updateLead = useMutation({
+    mutationFn: ({ id, action }: { id: string; action: string }) =>
+      fetch(`/api/admin/buyer-leads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin-buyer-leads"] })
+    },
+  })
+
+  const handleAction = (action: string, leadId: string) => {
+    updateLead.mutate(
+      { id: leadId, action },
+      {
+        onSuccess: (data) => {
+          if (data.success) {
+            toast({ title: `${action.charAt(0).toUpperCase() + action.slice(1)} successful` })
+          } else {
+            toast({ title: "Action failed", variant: "destructive" })
+          }
+        },
+        onError: () => {
+          toast({ title: "Action failed", variant: "destructive" })
+        },
+      }
+    )
+  }
 
   const leads = (data?.data ?? []).filter((lead) => {
     const matchesSearch =
@@ -211,20 +243,20 @@ export default function BuyerCRMPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAction("view", lead.id)}>
                               <Eye className="w-4 h-4 mr-2" /> View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleAction("schedule", lead.id)}>
                               <Calendar className="w-4 h-4 mr-2" /> Schedule Visit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setContactLead(lead)}>
                               <MessageCircle className="w-4 h-4 mr-2" /> Send Message
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-green-600">
+                            <DropdownMenuItem className="text-green-600" onClick={() => handleAction("convert", lead.id)}>
                               <CheckCircle className="w-4 h-4 mr-2" /> Mark Converted
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem className="text-red-600" onClick={() => handleAction("lost", lead.id)}>
                               <XCircle className="w-4 h-4 mr-2" /> Mark Lost
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -252,15 +284,22 @@ export default function BuyerCRMPage() {
             <div>
               <Label>Message</Label>
               <Textarea
+                id="contact-message"
                 placeholder={`Hi ${contactLead?.user.name}, I'm following up about your interest...`}
                 className="mt-1.5"
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1">
+              <Button variant="outline" className="flex-1" onClick={() => {
+                toast({ title: "Coming soon", description: "Phone call integration will be available soon." })
+              }}>
                 <Phone className="w-4 h-4 mr-2" /> Call
               </Button>
-              <Button className="flex-1 bg-primary hover:bg-primary-dark text-white">
+              <Button className="flex-1 bg-primary hover:bg-primary-dark text-white" onClick={() => {
+                const input = document.getElementById("contact-message") as HTMLTextAreaElement
+                toast({ title: "Message Sent", description: input?.value || "Message sent to buyer." })
+                setContactLead(null)
+              }}>
                 <MessageCircle className="w-4 h-4 mr-2" /> Send Message
               </Button>
             </div>

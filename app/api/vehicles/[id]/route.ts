@@ -9,7 +9,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         inspection: {
           include: {
-            sellerLead: true,
+            sellerLead: { include: { user: { select: { id: true, name: true, phone: true } } } },
             approvedBy: { select: { name: true, email: true } },
           },
         },

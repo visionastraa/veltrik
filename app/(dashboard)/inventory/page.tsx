@@ -194,6 +194,7 @@ export default function InventoryPage() {
   const [sidebarBrands, setSidebarBrands] = useState<string[]>([])
   const [sidebarBodyTypes, setSidebarBodyTypes] = useState<string[]>([])
   const [minBattery, setMinBattery] = useState(0)
+  const [rangeFilter, setRangeFilter] = useState([0, 600])
   const [searchFocused, setSearchFocused] = useState(false)
   const { data, isLoading } = useVehicles({
     page, limit: 12, search: search || undefined,
@@ -212,7 +213,7 @@ export default function InventoryPage() {
 
   const toggleCompare = (id: string) => compareStore.toggle(id)
   const toggleSection = (key: string) => setOpenSections((p) => ({ ...p, [key]: !p[key] }))
-  const resetAll = () => { setSearch(""); setBrand(""); setPriceRange([0, 10000000]); setMinBattery(0); setSidebarBrands([]); setSidebarBodyTypes([]); setPage(1) }
+  const resetAll = () => { setSearch(""); setBrand(""); setPriceRange([0, 10000000]); setMinBattery(0); setRangeFilter([0, 600]); setSidebarBrands([]); setSidebarBodyTypes([]); setPage(1) }
 
   const toggleSidebarBrand = (b: string) => {
     setSidebarBrands((prev) => {
@@ -249,8 +250,8 @@ export default function InventoryPage() {
         </label>))}
       </FilterSection>
       <FilterSection label="Range" open={openSections.range} onToggle={() => toggleSection("range")}>
-        <Slider defaultValue={[0, 600]} min={0} max={600} step={50} />
-        <div className="flex justify-between text-xs text-gray-500"><span>0 km</span><span>600 km</span></div>
+        <Slider value={rangeFilter} onValueChange={(v) => setRangeFilter(v as [number, number])} min={0} max={600} step={50} />
+        <div className="flex justify-between text-xs text-gray-500"><span>{rangeFilter[0]} km</span><span>{rangeFilter[1]} km</span></div>
       </FilterSection>
       <FilterSection label="Battery Health" open={openSections.battery} onToggle={() => toggleSection("battery")}>
         <Slider value={[minBattery]} onValueChange={(v) => { setMinBattery(v[0]); setPage(1) }} min={0} max={100} step={5} />

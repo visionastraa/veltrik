@@ -75,6 +75,7 @@ export interface InspectionFormData {
   techComments?: string
 }
 
+// ---------- Inspector Stats ----------
 export function useInspectorStats() {
   return useQuery<InspectorStats>({
     queryKey: ["inspector-stats"],
@@ -82,26 +83,29 @@ export function useInspectorStats() {
   })
 }
 
+// ---------- Inspector Inspections (maps to /api/inspector/leads) ----------
 export function useInspectorInspections() {
   return useQuery<{ success: boolean; data: InspectorInspection[] }>({
     queryKey: ["inspector-inspections"],
-    queryFn: () => fetch("/api/inspector/inspections").then((r) => r.json()),
+    queryFn: () => fetch("/api/inspector/leads").then((r) => r.json()),
   })
 }
 
+// ---------- Single Inspection ----------
 export function useInspectorInspection(id: string) {
   return useQuery<{ success: boolean; data: InspectorInspection }>({
     queryKey: ["inspector-inspection", id],
-    queryFn: () => fetch(`/api/inspector/inspections/${id}`).then((r) => r.json()),
+    queryFn: () => fetch(`/api/inspector/leads/${id}`).then((r) => r.json()),
     enabled: !!id,
   })
 }
 
+// ---------- Submit Inspection ----------
 export function useSubmitInspection() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: { inspectionId: string; formData: InspectionFormData }) =>
-      fetch("/api/inspector/submit", {
+    mutationFn: (data: { sellerLeadId: string; [key: string]: unknown }) =>
+      fetch("/api/inspection/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

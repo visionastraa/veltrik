@@ -38,7 +38,8 @@ export interface VehicleListing {
       photos: string[]
       status: string
       createdAt: string
-    }
+      user: { id: string; name: string; phone: string | null }
+    } | null
   }
 }
 

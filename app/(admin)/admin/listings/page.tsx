@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog"
 import { useVehicles, type VehicleListing } from "@/hooks/use-api"
 import { useToast } from "@/components/ui/use-toast"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { cn } from "@/lib/utils"
 
 const statusColors: Record<string, string> = {
@@ -36,11 +37,21 @@ const statusColors: Record<string, string> = {
 
 export default function ListingsManagement() {
   const { toast } = useToast()
+  const qc = useQueryClient()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortBy, setSortBy] = useState("newest")
   const [page, setPage] = useState(1)
   const [deleteTarget, setDeleteTarget] = useState<VehicleListing | null>(null)
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/vehicles/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["vehicles"] })
+      qc.invalidateQueries({ queryKey: ["admin-stats"] })
+    },
+  })
 
   const { data: vehiclesData, isLoading } = useVehicles({
     page,
@@ -294,7 +305,19 @@ export default function ListingsManagement() {
               variant="destructive"
               className="flex-1"
               onClick={() => {
-                toast({ title: "Listing Deleted", description: `${deleteTarget?.title} has been removed.`, variant: "destructive" })
+                if (!deleteTarget) return
+                deleteMutation.mutate(deleteTarget.id, {
+                  onSuccess: (data) => {
+                    if (data.success) {
+                      toast({ title: "Listing Deleted", description: `${deleteTarget.title} has been removed.`, variant: "destructive" })
+                    } else {
+                      toast({ title: "Error", description: data.error || "Failed to delete", variant: "destructive" })
+                    }
+                  },
+                  onError: () => {
+                    toast({ title: "Error", description: "Failed to delete listing", variant: "destructive" })
+                  },
+                })
                 setDeleteTarget(null)
               }}
             >

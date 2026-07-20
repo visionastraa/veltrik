@@ -29,89 +29,89 @@ type StationStatus = "available" | "busy" | "in-use";
 const stations = [
   {
     id: 1,
-    name: "GreenPulse Hub",
+    name: "Tata Power EZ Hub",
     type: "ultra-fast" as const,
-    location: "Downtown Manhattan",
-    distance: "0.8 mi",
+    location: "Connaught Place, Delhi",
+    distance: "1.2 km",
     power: 350,
     hours: "24/7",
     slots: { available: 4, total: 8 },
-    pricePerKwh: 0.35,
+    pricePerKwh: 18,
     status: "available" as const,
     amenities: ["Wi-Fi", "Lounge", "Coffee"],
   },
   {
     id: 2,
-    name: "Volt Station Central",
+    name: "Zeon Charging Station",
     type: "fast" as const,
-    location: "Brooklyn Bridge",
-    distance: "2.1 mi",
+    location: "Bandra West, Mumbai",
+    distance: "3.4 km",
     power: 150,
     hours: "6 AM – 12 AM",
     slots: { available: 1, total: 6 },
-    pricePerKwh: 0.28,
+    pricePerKwh: 15,
     status: "busy" as const,
     amenities: ["Restroom", "Snacks"],
   },
   {
     id: 3,
-    name: "ElectraPoint West",
+    name: "EESL Charging Point",
     type: "ultra-fast" as const,
-    location: "Hudson Yards",
-    distance: "3.5 mi",
+    location: "HSR Layout, Bangalore",
+    distance: "5.6 km",
     power: 300,
     hours: "24/7",
     slots: { available: 6, total: 10 },
-    pricePerKwh: 0.32,
+    pricePerKwh: 16,
     status: "available" as const,
     amenities: ["Wi-Fi", "Parking", "Food Court"],
   },
   {
     id: 4,
-    name: "ChargeUp Express",
+    name: "Ather Grid Point",
     type: "standard" as const,
-    location: "Williamsburg",
-    distance: "4.2 mi",
+    location: "Koramangala, Bangalore",
+    distance: "2.1 km",
     power: 50,
     hours: "7 AM – 11 PM",
     slots: { available: 0, total: 4 },
-    pricePerKwh: 0.20,
+    pricePerKwh: 12,
     status: "in-use" as const,
     amenities: ["Parking"],
   },
   {
     id: 5,
-    name: "PowerGrid Elite",
+    name: "MG Supercharger Hub",
     type: "fast" as const,
-    location: "Midtown East",
-    distance: "1.6 mi",
+    location: "Hitech City, Hyderabad",
+    distance: "2.5 km",
     power: 150,
     hours: "24/7",
     slots: { available: 3, total: 6 },
-    pricePerKwh: 0.30,
+    pricePerKwh: 17,
     status: "available" as const,
     amenities: ["Wi-Fi", "Restroom", "Vending"],
   },
   {
     id: 6,
-    name: "SparkCharge City",
+    name: "Fortum Charge & Drive",
     type: "ultra-fast" as const,
-    location: "SoHo",
-    distance: "2.9 mi",
+    location: "Indiranagar, Bangalore",
+    distance: "4.7 km",
     power: 350,
     hours: "5 AM – 1 AM",
     slots: { available: 0, total: 12 },
-    pricePerKwh: 0.38,
+    pricePerKwh: 20,
     status: "in-use" as const,
     amenities: ["Lounge", "Wi-Fi", "Charging Lounge"],
   },
 ];
 
 const stats = [
-  { label: "Total Stations", value: "2,450+", icon: Zap },
-  { label: "Available Now", value: "1,200+", icon: Plug },
-  { label: "Fast Chargers", value: "800+", icon: TrendingUp },
-  { label: "Cities Covered", value: "150+", icon: MapPin },
+  { label: "Total Stations", value: "5,200+", icon: Zap },
+  { label: "Available Now", value: "1,800+", icon: Plug },
+  { label: "Fast Chargers", value: "2,100+", icon: TrendingUp },
+  { label: "Cities Covered", value: "200+", icon: MapPin },
 ];
 
 const statusColors: Record<StationStatus, string> = {
@@ -175,7 +175,7 @@ export default function ChargingPage() {
     batteryCapacity[0] * ((targetCharge[0] - currentCharge[0]) / 100);
   const timeMinutes =
     chargingSpeed[0] > 0 ? (energyNeeded / chargingSpeed[0]) * 60 : 0;
-  const cost = energyNeeded * 0.32;
+  const cost = energyNeeded * 16;
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -359,7 +359,7 @@ export default function ChargingPage() {
 
                         <div className="mb-3 flex items-center justify-between">
                           <span className="text-sm text-gray-500">
-                            ${station.pricePerKwh.toFixed(2)}/kWh
+                            ₹{station.pricePerKwh}/kWh
                           </span>
                           <div className="flex items-center gap-1.5">
                             <span
@@ -391,6 +391,7 @@ export default function ChargingPage() {
                             size="sm"
                             className="flex-1 bg-primary hover:bg-primary/90"
                             disabled={station.status === "in-use"}
+                            onClick={() => window.open(`https://maps.google.com/?q=${station.name}+${station.location}`, "_blank")}
                           >
                             <Navigation className="mr-1.5 h-3.5 w-3.5" />
                             Navigate
@@ -399,6 +400,10 @@ export default function ChargingPage() {
                             size="sm"
                             variant="outline"
                             className="border-gray-200 text-gray-600"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${station.name} - ${station.location}`)
+                              alert("Station details copied!")
+                            }}
                           >
                             <Share2 className="h-3.5 w-3.5" />
                           </Button>
@@ -492,7 +497,7 @@ export default function ChargingPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-500">Est. Cost</span>
                   <span className="font-semibold text-emerald-600">
-                    ${cost.toFixed(2)}
+                    ₹{cost.toFixed(2)}
                   </span>
                 </div>
               </div>

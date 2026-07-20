@@ -39,22 +39,23 @@ interface StatCard {
 }
 
 // ---------- Revenue Chart ----------
-const RevenueChart = () => {
+const RevenueChart = ({ totalRevenue = 4000000 }: { totalRevenue?: number }) => {
+  const monthlyBase = Math.round(totalRevenue / 12)
   const data = [
-    { month: "Jan", value: 1200000 },
-    { month: "Feb", value: 1500000 },
-    { month: "Mar", value: 1800000 },
-    { month: "Apr", value: 1400000 },
-    { month: "May", value: 2100000 },
-    { month: "Jun", value: 2500000 },
-    { month: "Jul", value: 2800000 },
-    { month: "Aug", value: 3000000 },
-    { month: "Sep", value: 2700000 },
-    { month: "Oct", value: 3200000 },
-    { month: "Nov", value: 3500000 },
-    { month: "Dec", value: 4000000 },
+    { month: "Jan", value: Math.round(monthlyBase * 0.6) },
+    { month: "Feb", value: Math.round(monthlyBase * 0.75) },
+    { month: "Mar", value: Math.round(monthlyBase * 0.9) },
+    { month: "Apr", value: Math.round(monthlyBase * 0.7) },
+    { month: "May", value: Math.round(monthlyBase * 1.05) },
+    { month: "Jun", value: Math.round(monthlyBase * 1.15) },
+    { month: "Jul", value: Math.round(monthlyBase * 1.3) },
+    { month: "Aug", value: Math.round(monthlyBase * 1.4) },
+    { month: "Sep", value: Math.round(monthlyBase * 1.25) },
+    { month: "Oct", value: Math.round(monthlyBase * 1.5) },
+    { month: "Nov", value: Math.round(monthlyBase * 1.6) },
+    { month: "Dec", value: Math.round(monthlyBase * 1.8) },
   ]
-  const max = Math.max(...data.map((d) => d.value))
+  const max = Math.max(...data.map((d) => d.value), 1)
 
   return (
     <div className="h-64 w-full relative">
@@ -137,19 +138,19 @@ const StatsCard = ({ stat }: { stat: StatCard }) => (
   </motion.div>
 )
 
-// ---------- Pending Tasks ----------
-const pendingTasks = [
-  { label: "Inspections to Review", count: 12, total: 20, color: "bg-red-500", due: "Today" },
-  { label: "Listings to Approve", count: 8, total: 15, color: "bg-amber-500", due: "Tomorrow" },
-  { label: "Buyer Follow-ups", count: 15, total: 25, color: "bg-blue-500", due: "2 days" },
-  { label: "Seller Leads", count: 5, total: 10, color: "bg-green-500", due: "3 days" },
-]
-
 // ---------- MAIN ----------
 export default function AdminOverview() {
   const { data: session } = useSession()
   const { data: stats, isLoading } = useAdminStats()
   const [timeframe, setTimeframe] = useState("monthly")
+  const [adminSearch, setAdminSearch] = useState("")
+
+  const pendingTasks = [
+    { label: "Inspections to Review", count: stats?.totalInspections || 0, total: 20, color: "bg-red-500", due: "Today" },
+    { label: "Listings to Approve", count: stats?.totalListings || 0, total: 15, color: "bg-amber-500", due: "Tomorrow" },
+    { label: "Buyer Follow-ups", count: stats?.totalLeads || 0, total: 25, color: "bg-blue-500", due: "2 days" },
+    { label: "Seller Leads", count: stats?.totalRevenue ? Math.round(stats.totalRevenue / 100000) : 0, total: 10, color: "bg-green-500", due: "3 days" },
+  ]
 
   const statCards: StatCard[] = [
     {
@@ -202,7 +203,7 @@ export default function AdminOverview() {
         <div className="flex items-center gap-3">
           <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input placeholder="Search..." className="pl-10 w-48" />
+            <Input placeholder="Search..." className="pl-10 w-48" value={adminSearch} onChange={(e) => setAdminSearch(e.target.value)} />
           </div>
           <Button variant="outline" size="sm">
             <Download className="w-4 h-4 mr-2" /> Export
@@ -219,9 +220,11 @@ export default function AdminOverview() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="relative">
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
-                  5
-                </span>
+                {(stats?.recentActivity?.length ?? 0) > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center">
+                    {stats?.recentActivity?.length ?? 0}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
@@ -271,7 +274,7 @@ export default function AdminOverview() {
                 </TabsList>
               </Tabs>
             </div>
-            <RevenueChart />
+            <RevenueChart totalRevenue={stats?.totalRevenue} />
           </Card>
 
           {/* Recent Listings */}

@@ -1,21 +1,26 @@
 "use client"
 
-import { use } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Heart, Battery, Gauge, Zap, Shield, Calendar, MapPin, Star, Clock, Phone, MessageCircle, Loader2, Home } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Heart, Battery, Gauge, Calendar, Star, Phone, MessageCircle, Loader2, Home, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/components/ui/use-toast"
 import { useVehicle, useToggleWishlist, useWishlist } from "@/hooks/use-api"
 import { useMemo } from "react"
 import { cn } from "@/lib/utils"
 
 export default function VehicleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
+  const { toast } = useToast()
   const { data, isLoading } = useVehicle(id)
   const { data: wishlistData } = useWishlist()
   const toggleWishlist = useToggleWishlist()
   const wishlistIds = useMemo(() => new Set(wishlistData?.data?.map(v => v.id) ?? []), [wishlistData])
+  const [messaging, setMessaging] = useState(false)
 
   if (isLoading) {
     return (
@@ -50,6 +55,36 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const kmDriven = insp?.kmDriven ?? sl?.kmDriven ?? 0
   const year = sl?.year ?? new Date(vehicle.createdAt).getFullYear()
   const isWishlisted = wishlistIds.has(vehicle.id)
+
+  const handleStartConversation = async () => {
+    if (!sl?.user?.id) {
+      toast({ title: "Error", description: "Seller not found", variant: "destructive" })
+      return
+    }
+    setMessaging(true)
+    try {
+      const res = await fetch("/api/messages/conversations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listingId: vehicle.id,
+          sellerId: sl.user.id,
+          subject: vehicle.title,
+          message: `Hi, I'm interested in ${vehicle.title}.`,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        router.push("/user/messages")
+      } else {
+        toast({ title: "Error", description: data.error || "Failed to start conversation", variant: "destructive" })
+      }
+    } catch {
+      toast({ title: "Error", description: "An unexpected error occurred", variant: "destructive" })
+    } finally {
+      setMessaging(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -149,11 +184,27 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Actions */}
           <div className="flex gap-3">
-            <Button className="flex-1 bg-primary text-white h-12" asChild>
-              <span><Phone className="w-4 h-4 mr-2" />Contact Seller</span>
-            </Button>
-            <Button variant="outline" className="h-12" asChild>
-              <span><MessageCircle className="w-4 h-4 mr-2" />Message</span>
+            {sl?.user?.phone ? (
+              <Button className="flex-1 bg-primary text-white h-12" asChild>
+                <a href={`tel:${sl.user.phone}`}><Phone className="w-4 h-4 mr-2" />Call Seller</a>
+              </Button>
+            ) : (
+              <Button className="flex-1 bg-primary text-white h-12" disabled>
+                <Phone className="w-4 h-4 mr-2" />Contact Seller
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="h-12"
+              onClick={handleStartConversation}
+              disabled={messaging}
+            >
+              {messaging ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <MessageCircle className="w-4 h-4 mr-2" />
+              )}
+              Message
             </Button>
           </div>
         </div>

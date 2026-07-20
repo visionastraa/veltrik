@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { sendEmail, buildWelcomeEmail } from "@/lib/mailer"
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +27,12 @@ export async function POST(request: NextRequest) {
         role: role === "SELLER" ? "SELLER" : "BUYER",
       },
     })
+
+    await sendEmail({
+      to: email,
+      subject: "Welcome to Veltrik!",
+      html: buildWelcomeEmail(name),
+    }).catch((e) => console.error("[register] welcome email failed:", e))
 
     return NextResponse.json({
       success: true,

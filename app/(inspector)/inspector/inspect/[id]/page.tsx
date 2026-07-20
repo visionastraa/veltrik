@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -20,24 +20,9 @@ import { Slider } from "@/components/ui/slider"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
+import { useInspectorInspection, useSubmitInspection } from "@/hooks/use-inspector-api"
 
-const vehicleData = {
-  id: "INS-001",
-  make: "Tesla",
-  model: "Model 3",
-  variant: "Long Range",
-  year: 2024,
-  vehicleNumber: "KA05AM9207",
-  owner: "Rahul Sharma",
-  phone: "+91 98765 43210",
-  email: "rahul@example.com",
-  location: "Delhi, India",
-  address: "123, Green Park, Delhi",
-  scheduledAt: "2024-12-20T10:00:00",
-  batteryEstimate: 87,
-  expectedPrice: 4599000,
-  notes: "Customer wants full inspection report",
-}
+
 
 const steps = [
   { id: "vehicle", label: "Vehicle", icon: Car },
@@ -52,10 +37,30 @@ export default function InspectionForm() {
   const router = useRouter()
   const { toast } = useToast()
   const [step, setStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
   const [uploadedVideos, setUploadedVideos] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const { data: inspectionRes, isLoading, isError } = useInspectorInspection(params.id as string)
+  const submitMutation = useSubmitInspection()
+  const isSubmitting = submitMutation.isPending
+
+  const inspection = inspectionRes?.data ?? null
+
+  const vehicle = inspection
+    ? {
+        make: inspection.sellerLead.make,
+        model: inspection.sellerLead.model,
+        variant: inspection.sellerLead.variant,
+        vehicleNumber: inspection.sellerLead.vehicleNumber,
+        year: inspection.sellerLead.year,
+        owner: inspection.sellerLead.user.name,
+        location: "",
+        scheduledAt: inspection.createdAt,
+        batteryEstimate: inspection.batteryHealth ?? 0,
+        expectedPrice: inspection.sellerLead.expectedPrice,
+      }
+    : null
 
   // Form state
   const [form, setForm] = useState({
@@ -86,6 +91,34 @@ export default function InspectionForm() {
   const update = <K extends keyof typeof form>(field: K, value: (typeof form)[K]) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
+  useEffect(() => {
+    if (!inspection) return
+    setForm({
+      ageYears: inspection.ageYears ?? 0,
+      ageMonths: inspection.ageMonths ?? 0,
+      kmDriven: inspection.kmDriven ?? 0,
+      bodyDamage: inspection.bodyDamage ?? "pass",
+      forkDamage: false,
+      accidentHistory: inspection.accidentHistory ?? "clean",
+      warrantyStatus: inspection.warrantyStatus ?? "under_warranty",
+      warrantyType: "standard",
+      warrantyExpiry: "",
+      partsReplaced: false,
+      replacedParts: "",
+      adminComments: "",
+      batteryCharge: inspection.batteryCharge ?? 75,
+      batteryHealth: inspection.batteryHealth ?? 85,
+      batteryVoltage: 0,
+      physicalDamage: false,
+      brakeSystem: inspection.brakeSystem ?? "pass",
+      brakePads: "good",
+      wheelAlignment: "aligned",
+      testDriveRating: inspection.testDriveRating ?? 0,
+      testDriveNotes: inspection.testDriveNotes ?? "",
+      techComments: "",
+    })
+  }, [inspection])
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
@@ -100,11 +133,19 @@ export default function InspectionForm() {
   }
 
   const handleSubmit = async () => {
-    setIsSubmitting(true)
-    await new Promise((r) => setTimeout(r, 2000))
-    toast({ title: "Inspection Submitted", description: "The inspection report has been sent to admin for review." })
-    setIsSubmitting(false)
-    router.push("/inspector")
+    if (!inspection) return
+    submitMutation.mutate(
+      { ...form, sellerLeadId: inspection.sellerLead.id },
+      {
+        onSuccess: () => {
+          toast({ title: "Inspection Submitted", description: "The inspection report has been sent to admin for review." })
+          router.push("/inspector")
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to submit inspection. Please try again.", variant: "destructive" })
+        },
+      }
+    )
   }
 
   const calculateScore = () => {
@@ -123,6 +164,32 @@ export default function InspectionForm() {
 
   const getScoreColor = (v: number) => (v >= 80 ? "text-green-500" : v >= 60 ? "text-amber-500" : "text-red-500")
 
+  if (isLoading) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-48" />
+          <div className="h-4 bg-gray-200 rounded w-96" />
+          <div className="h-24 bg-gray-200 rounded-xl" />
+          <div className="h-96 bg-gray-200 rounded-xl" />
+        </div>
+      </div>
+    )
+  }
+
+  if (isError || !vehicle) {
+    return (
+      <div className="p-6 max-w-5xl mx-auto">
+        <Card className="p-8 text-center">
+          <AlertTriangle className="w-12 h-12 mx-auto text-red-400 mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Failed to Load Inspection</h2>
+          <p className="text-gray-500 mb-4">Could not load the inspection data. Please try again.</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -134,11 +201,11 @@ export default function InspectionForm() {
           <div>
             <h1 className="text-2xl font-bold">Inspection Form</h1>
             <div className="flex items-center gap-3 text-sm text-gray-500">
-              <span>{vehicleData.make} {vehicleData.model}</span>
+              <span>{vehicle.make} {vehicle.model}</span>
               <span>·</span>
-              <span>{vehicleData.vehicleNumber}</span>
+              <span>{vehicle.vehicleNumber}</span>
               <span>·</span>
-              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(vehicleData.scheduledAt).toLocaleString()}</span>
+              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(vehicle.scheduledAt).toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -167,10 +234,10 @@ export default function InspectionForm() {
       <Card className="p-6 border-0 shadow-sm bg-white/80 backdrop-blur-sm">
         {/* Vehicle Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-xl mb-6">
-          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><Car className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Vehicle</p><p className="font-medium text-sm">{vehicleData.make} {vehicleData.model}</p></div></div>
-          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><User className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Owner</p><p className="font-medium text-sm">{vehicleData.owner}</p></div></div>
-          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><MapPin className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Location</p><p className="font-medium text-sm truncate">{vehicleData.location}</p></div></div>
-          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><Battery className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Battery Est.</p><p className="font-medium text-sm">{vehicleData.batteryEstimate}%</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><Car className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Vehicle</p><p className="font-medium text-sm">{vehicle.make} {vehicle.model}</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><User className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Owner</p><p className="font-medium text-sm">{vehicle.owner}</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><MapPin className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Location</p><p className="font-medium text-sm truncate">{vehicle.location}</p></div></div>
+          <div className="flex items-center gap-3"><div className="p-2 bg-emerald-100 rounded-lg"><Battery className="w-4 h-4 text-emerald-600" /></div><div><p className="text-xs text-gray-500">Battery Est.</p><p className="font-medium text-sm">{vehicle.batteryEstimate}%</p></div></div>
         </div>
 
         {/* Step Content */}
@@ -387,7 +454,7 @@ export default function InspectionForm() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-gray-500">Estimated Offer</p>
-                      <p className="text-2xl font-bold text-emerald-600">₹{Math.round(vehicleData.expectedPrice * (calculateScore() / 100) * 0.8).toLocaleString()}</p>
+                      <p className="text-2xl font-bold text-emerald-600">₹{Math.round(vehicle.expectedPrice * (calculateScore() / 100) * 0.8).toLocaleString()}</p>
                       <Badge variant="outline" className="mt-1">{calculateScore() >= 85 ? "Premium" : calculateScore() >= 70 ? "Good" : calculateScore() >= 50 ? "Fair" : "Reject"}</Badge>
                     </div>
                   </div>
@@ -396,9 +463,9 @@ export default function InspectionForm() {
                   <div>
                     <h4 className="font-medium mb-3">Vehicle Details</h4>
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-gray-500">Make/Model</span><span>{vehicleData.make} {vehicleData.model}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Variant</span><span>{vehicleData.variant}</span></div>
-                      <div className="flex justify-between"><span className="text-gray-500">Registration</span><span>{vehicleData.vehicleNumber}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Make/Model</span><span>{vehicle.make} {vehicle.model}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Variant</span><span>{vehicle.variant}</span></div>
+                      <div className="flex justify-between"><span className="text-gray-500">Registration</span><span>{vehicle.vehicleNumber}</span></div>
                       <div className="flex justify-between"><span className="text-gray-500">KM Driven</span><span>{form.kmDriven.toLocaleString()}</span></div>
                     </div>
                   </div>

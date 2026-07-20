@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
   Package, Search, Truck, CheckCircle2, Clock, ChevronDown, ChevronUp,
   FileText, Download, Phone, MapPin, Shield, Palette, Hash, Car,
-  FileCheck, FileLock, FileWarning, ArrowLeft, Home
+  FileCheck, FileLock, FileWarning, ArrowLeft, Home, Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -14,73 +14,9 @@ import { Input } from "@/components/ui/input"
 import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { motion, AnimatePresence } from "framer-motion"
+import { useOrders } from "@/hooks/use-api"
+import { useToast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils"
-
-const MOCK_ORDERS = [
-  {
-    id: "ORD-2024-001",
-    vehicle: "Tata Nexon EV Max",
-    date: "2024-11-15",
-    price: 1749000,
-    dealer: "VoltEV Motors, Pune",
-    dealerPhone: "+91 98765 43210",
-    status: "delivered" as const,
-    variant: "XZ+ Lux",
-    color: "Arctic White",
-    warranty: "5 Years / 1,00,000 km",
-    deliveredAt: "2024-12-20",
-    trackingSteps: [
-      { label: "Order Confirmed", done: true, date: "Nov 15" },
-      { label: "Vehicle Ready", done: true, date: "Nov 28" },
-      { label: "Shipped", done: true, date: "Dec 5" },
-      { label: "Delivered", done: true, date: "Dec 20" },
-    ],
-  },
-  {
-    id: "ORD-2024-002",
-    vehicle: "MG ZS EV 2024",
-    date: "2024-12-01",
-    price: 2199000,
-    dealer: "ElectricHub, Mumbai",
-    dealerPhone: "+91 87654 32109",
-    status: "shipped" as const,
-    variant: "Exclusive Pro",
-    color: "Copenhagen Blue",
-    warranty: "5 Years / Unlimited km",
-    deliveredAt: null,
-    trackingSteps: [
-      { label: "Order Confirmed", done: true, date: "Dec 1" },
-      { label: "Vehicle Ready", done: true, date: "Dec 10" },
-      { label: "Shipped", done: true, date: "Dec 18" },
-      { label: "Delivered", done: false, date: "Est. Dec 28" },
-    ],
-  },
-  {
-    id: "ORD-2025-003",
-    vehicle: "Hyundai Ioniq 5",
-    date: "2025-01-05",
-    price: 4495000,
-    dealer: "GreenDrive Delhi",
-    dealerPhone: "+91 76543 21098",
-    status: "processing" as const,
-    variant: "Prestige LR AWD",
-    color: "Titan Grey",
-    warranty: "8 Years / 1,60,000 km",
-    deliveredAt: null,
-    trackingSteps: [
-      { label: "Order Confirmed", done: true, date: "Jan 5" },
-      { label: "Vehicle Ready", done: false, date: "Est. Jan 20" },
-      { label: "Shipped", done: false, date: "Est. Jan 25" },
-      { label: "Delivered", done: false, date: "Est. Feb 1" },
-    ],
-  },
-]
-
-const STATUS_CONFIG = {
-  processing: { label: "Processing", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
-  shipped: { label: "Shipped", color: "bg-blue-100 text-blue-700 border-blue-200", icon: Truck },
-  delivered: { label: "Delivered", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
-}
 
 const DOCUMENTS = [
   { name: "Invoice", icon: FileText },
@@ -89,8 +25,15 @@ const DOCUMENTS = [
   { name: "Warranty Card", icon: FileWarning },
 ]
 
-function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ComponentType<{ className?: string }> }> = {
+  created: { label: "Processing", color: "bg-amber-100 text-amber-700 border-amber-200", icon: Clock },
+  paid: { label: "Completed", color: "bg-green-100 text-green-700 border-green-200", icon: CheckCircle2 },
+  failed: { label: "Failed", color: "bg-red-100 text-red-700 border-red-200", icon: Truck },
+}
+
+function StatusBadge({ status }: { status: string }) {
   const cfg = STATUS_CONFIG[status]
+  if (!cfg) return <Badge variant="outline">{status}</Badge>
   return (
     <Badge variant="outline" className={cn("text-xs font-medium", cfg.color)}>
       <cfg.icon className="w-3 h-3 mr-1" />
@@ -99,33 +42,9 @@ function StatusBadge({ status }: { status: keyof typeof STATUS_CONFIG }) {
   )
 }
 
-function TrackingTimeline({ steps }: { steps: typeof MOCK_ORDERS[0]["trackingSteps"] }) {
-  const completedCount = steps.filter(s => s.done).length
-  const progress = (completedCount / steps.length) * 100
-
-  return (
-    <div className="space-y-3">
-      <Progress value={progress} className="h-2" />
-      <div className="flex justify-between">
-        {steps.map((step, i) => (
-          <div key={i} className="flex flex-col items-center text-center flex-1">
-            <div className={cn(
-              "w-3 h-3 rounded-full mb-1",
-              step.done ? "bg-primary" : "bg-gray-300"
-            )} />
-            <p className={cn("text-[10px] leading-tight", step.done ? "text-foreground font-medium" : "text-gray-400")}>
-              {step.label}
-            </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">{step.date}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function OrderCard({ order }: { order: typeof MOCK_ORDERS[0] }) {
+function OrderCard({ order }: { order: any }) {
   const [expanded, setExpanded] = useState(false)
+  const { toast } = useToast()
 
   return (
     <Card className="overflow-hidden border-0 shadow-sm bg-white rounded-xl">
@@ -135,12 +54,11 @@ function OrderCard({ order }: { order: typeof MOCK_ORDERS[0] }) {
             <Car className="w-7 h-7 text-gray-400" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-semibold text-sm truncate">{order.vehicle}</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{order.id}</p>
+            <h3 className="font-semibold text-sm truncate">{order.id}</h3>
+            <p className="text-xs text-gray-400 mt-0.5">Order #{order.razorpayOrderId?.slice(-8) || "N/A"}</p>
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-gray-500">
-              <span>{new Date(order.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
-              <span className="font-semibold text-foreground">₹{(order.price / 100000).toFixed(2)}L</span>
-              <span className="truncate max-w-[160px]">{order.dealer.split(",")[0]}</span>
+              <span>{new Date(order.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+              <span className="font-semibold text-foreground">₹{(order.amount / 100).toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -161,17 +79,14 @@ function OrderCard({ order }: { order: typeof MOCK_ORDERS[0] }) {
             transition={{ duration: 0.2 }}
           >
             <div className="border-t px-4 py-4 space-y-4">
-              <TrackingTimeline steps={order.trackingSteps} />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-gray-600"><MapPin className="w-3.5 h-3.5" />{order.dealer}</div>
-                  <div className="flex items-center gap-2 text-gray-600"><Phone className="w-3.5 h-3.5" />{order.dealerPhone}</div>
-                  <div className="flex items-center gap-2 text-gray-600"><Hash className="w-3.5 h-3.5" />{order.variant}</div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Order ID</p>
+                  <p className="font-medium">{order.razorpayOrderId || "N/A"}</p>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2 text-gray-600"><Palette className="w-3.5 h-3.5" />{order.color}</div>
-                  <div className="flex items-center gap-2 text-gray-600"><Shield className="w-3.5 h-3.5" />{order.warranty}</div>
+                <div>
+                  <p className="text-gray-500">Payment ID</p>
+                  <p className="font-medium">{order.razorpayPaymentId || "N/A"}</p>
                 </div>
               </div>
 
@@ -179,7 +94,7 @@ function OrderCard({ order }: { order: typeof MOCK_ORDERS[0] }) {
                 <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Documents</p>
                 <div className="flex flex-wrap gap-2">
                   {DOCUMENTS.map((doc) => (
-                    <Button key={doc.name} variant="outline" size="sm" className="text-xs h-8">
+                    <Button key={doc.name} variant="outline" size="sm" className="text-xs h-8" onClick={() => toast({ title: "Coming Soon", description: `${doc.name} download will be available shortly.` })}>
                       <doc.icon className="w-3.5 h-3.5 mr-1.5" />
                       {doc.name}
                       <Download className="w-3 h-3 ml-1.5 text-gray-400" />
@@ -198,28 +113,36 @@ function OrderCard({ order }: { order: typeof MOCK_ORDERS[0] }) {
 export default function OrdersPage() {
   const [search, setSearch] = useState("")
   const [activeTab, setActiveTab] = useState("all")
+  const { data, isLoading } = useOrders()
 
-  const orders = MOCK_ORDERS.filter(o =>
-    o.vehicle.toLowerCase().includes(search.toLowerCase()) ||
-    o.id.toLowerCase().includes(search.toLowerCase())
+  const orders = (data?.data ?? []).filter((o: any) =>
+    o.id?.toLowerCase().includes(search.toLowerCase()) ||
+    o.razorpayOrderId?.toLowerCase().includes(search.toLowerCase())
   )
 
   const counts = {
     all: orders.length,
-    processing: orders.filter(o => o.status === "processing").length,
-    shipped: orders.filter(o => o.status === "shipped").length,
-    delivered: orders.filter(o => o.status === "delivered").length,
+    processing: orders.filter((o: any) => o.status === "created").length,
+    completed: orders.filter((o: any) => o.status === "paid").length,
+    failed: orders.filter((o: any) => o.status === "failed").length,
   }
 
   const stats = [
-    { label: "Total Orders", value: MOCK_ORDERS.length, color: "text-foreground", bg: "bg-gray-100", icon: Package },
+    { label: "Total Orders", value: orders.length, color: "text-foreground", bg: "bg-gray-100", icon: Package },
     { label: "Processing", value: counts.processing, color: "text-amber-600", bg: "bg-amber-50", icon: Clock },
-    { label: "Shipped", value: counts.shipped, color: "text-blue-600", bg: "bg-blue-50", icon: Truck },
-    { label: "Delivered", value: counts.delivered, color: "text-green-600", bg: "bg-green-50", icon: CheckCircle2 },
+    { label: "Completed", value: counts.completed, color: "text-green-600", bg: "bg-green-50", icon: CheckCircle2 },
+    { label: "Failed", value: counts.failed, color: "text-red-600", bg: "bg-red-50", icon: Truck },
   ]
 
   const renderTab = (filter: string | null) => {
-    const list = filter ? orders.filter(o => o.status === filter) : orders
+    const list = filter ? orders.filter((o: any) => o.status === filter) : orders
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      )
+    }
     if (list.length === 0) {
       return (
         <div className="text-center py-12 text-gray-400">
@@ -228,7 +151,7 @@ export default function OrdersPage() {
         </div>
       )
     }
-    return <div className="space-y-3">{list.map(o => <OrderCard key={o.id} order={o} />)}</div>
+    return <div className="space-y-3">{list.map((o: any) => <OrderCard key={o.id} order={o} />)}</div>
   }
 
   return (
@@ -253,7 +176,7 @@ export default function OrdersPage() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <Package className="w-6 h-6" />Your Orders
               </h1>
-              <p className="text-gray-500">Track deliveries and manage your purchases</p>
+              <p className="text-gray-500">Track your purchases</p>
             </div>
           </div>
           <div className="relative hidden sm:block">
@@ -300,15 +223,15 @@ export default function OrdersPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-            <TabsTrigger value="processing">Processing ({counts.processing})</TabsTrigger>
-            <TabsTrigger value="shipped">Shipped ({counts.shipped})</TabsTrigger>
-            <TabsTrigger value="delivered">Delivered ({counts.delivered})</TabsTrigger>
+            <TabsTrigger value="created">Processing ({counts.processing})</TabsTrigger>
+            <TabsTrigger value="paid">Completed ({counts.completed})</TabsTrigger>
+            <TabsTrigger value="failed">Failed ({counts.failed})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-4">{renderTab(null)}</TabsContent>
-          <TabsContent value="processing" className="mt-4">{renderTab("processing")}</TabsContent>
-          <TabsContent value="shipped" className="mt-4">{renderTab("shipped")}</TabsContent>
-          <TabsContent value="delivered" className="mt-4">{renderTab("delivered")}</TabsContent>
+          <TabsContent value="created" className="mt-4">{renderTab("created")}</TabsContent>
+          <TabsContent value="paid" className="mt-4">{renderTab("paid")}</TabsContent>
+          <TabsContent value="failed" className="mt-4">{renderTab("failed")}</TabsContent>
         </Tabs>
       </div>
     </div>

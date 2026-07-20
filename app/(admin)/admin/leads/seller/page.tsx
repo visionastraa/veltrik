@@ -77,15 +77,28 @@ export default function SellerLeadsPage() {
     if (!selectedLead) return
     const lead = leads.find((l) => l.id === selectedLead.id)
     if (!lead) return
+    if (!lead.inspection?.id) {
+      toast({ title: "Error", description: "No inspection found for this lead. Please complete inspection first.", variant: "destructive" })
+      return
+    }
 
-    // Find the inspection for this lead (if it exists)
-    // For now, we'll just show a toast since we need the inspection ID
-    toast({
-      title: "Offer Submitted",
-      description: `₹${Number(offerAmount).toLocaleString()} offer sent to ${lead.user.name}`,
-    })
-    setIsOfferDialogOpen(false)
-    setOfferAmount("")
+    approveMutation.mutate(
+      { inspectionId: lead.inspection.id, offerPrice: Number(offerAmount) },
+      {
+        onSuccess: (data) => {
+          if (data.success) {
+            toast({ title: "Offer Submitted", description: `₹${Number(offerAmount).toLocaleString()} offer sent to ${lead.user.name}` })
+            setIsOfferDialogOpen(false)
+            setOfferAmount("")
+          } else {
+            toast({ title: "Error", description: data.error || "Failed to submit offer", variant: "destructive" })
+          }
+        },
+        onError: () => {
+          toast({ title: "Error", description: "Failed to submit offer", variant: "destructive" })
+        },
+      }
+    )
   }
 
   const handleReject = async (lead: SellerLeadData) => {

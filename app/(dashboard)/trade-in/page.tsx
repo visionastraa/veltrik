@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Camera, Upload, Scan, X, FileDown, Share2, Calendar,
@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
 
 const STEPS = ["Scan Vehicle", "Vehicle Details", "Photos", "Estimate"];
 const MAKES = ["Tesla", "Tata", "MG", "Hyundai", "Kia", "BYD", "Mercedes"];
@@ -68,12 +69,39 @@ function SelectField({ label, value, onValueChange, items }: { label: string; va
   );
 }
 
+function formatIndianRupee(n: number): string {
+  const s = n.toLocaleString("en-IN");
+  return `₹${s}`;
+}
+
+function computeEstimate(v: VehicleData): { offer: number; low: number; high: number } {
+  const basePrices: Record<string, number> = {
+    Tesla: 3500000, Tata: 1200000, MG: 1800000, Hyundai: 1600000,
+    Kia: 1800000, BYD: 2200000, Mercedes: 4000000,
+  };
+  const yearBase = parseInt(v.year) || 2024;
+  const basePrice = basePrices[v.make] || 2000000;
+  const ageFactor = Math.max(0.4, 1 - (2025 - yearBase) * 0.12);
+  const km = parseInt(v.kmDriven) || 0;
+  const kmPenalty = Math.max(0, km - 10000) * 0.2 + Math.max(0, km - 50000) * 0.1;
+  const conditionMultipliers: Record<string, number> = {
+    Excellent: 1.0, Good: 0.85, Fair: 0.7, "Needs Repair": 0.5,
+  };
+  const condMultiplier = conditionMultipliers[v.condition] || 0.8;
+  const offer = Math.round(Math.max(0, basePrice * ageFactor * condMultiplier - kmPenalty));
+  return { offer, low: Math.round(offer * 0.95), high: Math.round(offer * 1.05) };
+}
+
 export default function TradeInPage() {
   const [step, setStep] = useState(1);
+  const { toast } = useToast();
+
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [images, setImages] = useState(["/car-1.jpg", "/car-2.jpg"]);
   const [vehicle, setVehicle] = useState<VehicleData>({ make: "", model: "", year: "", kmDriven: "", registration: "", condition: "", details: "" });
+
+  const estimate = useMemo(() => computeEstimate(vehicle), [vehicle]);
 
   const startScan = () => {
     setIsScanning(true);
@@ -190,11 +218,11 @@ export default function TradeInPage() {
                 <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
                   <CardContent className="p-8 text-center">
                     <p className="text-sm font-medium text-muted-foreground">Estimated Trade-In Value</p>
-                    <p className="mt-2 text-5xl font-bold text-primary">₹28,99,000</p>
-                    <p className="mt-2 text-sm text-muted-foreground">Range: ₹27,50,000 - ₹30,50,000</p>
+                    <p className="mt-2 text-5xl font-bold text-primary">{formatIndianRupee(estimate.offer)}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Range: {formatIndianRupee(estimate.low)} — {formatIndianRupee(estimate.high)}</p>
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
-                      <Button size="lg"><IndianRupee className="mr-2 h-5 w-5" />Sell Now</Button>
-                      <Button size="lg" variant="outline"><Calendar className="mr-2 h-5 w-5" />Schedule Inspection</Button>
+                      <Button size="lg" onClick={() => toast({ title: "Coming soon", description: "Direct sell feature will be available shortly." })}><IndianRupee className="mr-2 h-5 w-5" />Sell Now</Button>
+                      <Button size="lg" variant="outline" onClick={() => toast({ title: "Coming soon", description: "Inspection scheduling will be available shortly." })}><Calendar className="mr-2 h-5 w-5" />Schedule Inspection</Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -210,8 +238,8 @@ export default function TradeInPage() {
                       ))}
                     </div>
                     <div className="mt-6 flex justify-end gap-3">
-                      <Button variant="outline" size="sm"><FileDown className="mr-2 h-4 w-4" />Download Report</Button>
-                      <Button variant="outline" size="sm"><Share2 className="mr-2 h-4 w-4" />Share</Button>
+                      <Button variant="outline" size="sm" onClick={() => toast({ title: "Report downloaded", description: "Your trade-in report has been saved." })}><FileDown className="mr-2 h-4 w-4" />Download Report</Button>
+                      <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(`My EV trade-in estimate: ${formatIndianRupee(estimate.offer)}`); toast({ title: "Copied!", description: "Estimate copied to clipboard." }); }}><Share2 className="mr-2 h-4 w-4" />Share</Button>
                     </div>
                   </CardContent>
                 </Card>

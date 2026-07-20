@@ -8,10 +8,10 @@ Last updated: 2026-07-19
 - [!] In progress
 - [-] Blocked
 
-## Phase 0: Baseline Commit [ ]
-- [ ] `git add -A` all untracked code
-- [ ] Commit as baseline
-- [ ] Create feature branches
+## Phase 0: Baseline Commit [x]
+- [x] `git add -A` all untracked code
+- [x] Commit as baseline
+- [x] Create feature branches
 
 ## Phase 1: Library Files [ ]
 - [ ] `lib/brandModels.ts`

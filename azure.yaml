@@ -1,0 +1,9 @@
+name: veltrik
+services:
+  veltrik:
+    host: containerapp
+    project: .
+    docker:
+      path: ./Dockerfile
+    env:
+      NODE_ENV: production

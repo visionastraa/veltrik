@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { emitToUser } from "@/lib/socket-emitter"
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +38,11 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    const sellerLead = await prisma.sellerLead.findUnique({
+      where: { id: inspection.sellerLeadId },
+      select: { userId: true },
+    })
+
     await prisma.activityLog.create({
       data: {
         action: "Vehicle Approved & Listed",
@@ -45,6 +51,14 @@ export async function POST(request: NextRequest) {
         metadata: { inspectionId, listingId: listing.id },
       },
     })
+
+    if (sellerLead?.userId) {
+      emitToUser(sellerLead.userId, "notification:new", {
+        type: "approved",
+        title: "Vehicle Approved",
+        message: `Your ${listing.title} has been approved and listed at ₹${(offerPrice / 100000).toFixed(2)}L.`,
+      })
+    }
 
     return NextResponse.json({ success: true, inspection, listing })
   } catch {
