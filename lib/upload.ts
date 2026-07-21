@@ -1,28 +1,37 @@
-import fs from "fs/promises";
-import path from "path";
+import { writeFile, mkdir } from "fs/promises"
+import { join } from "path"
 
-/**
- * Save an uploaded file to /public/uploads/{folder}/{timestamp}-{filename}
- * Creates the directory if it does not exist.
- * Returns the public URL path as a string.
- */
-export async function saveFile(file: File, folder: string): Promise<string> {
-  const timestamp = Date.now();
-  const originalName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-  const filename = `${timestamp}-${originalName}`;
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"]
+const MAX_FILE_SIZE = 10 * 1024 * 1024
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", folder);
+export interface UploadResult {
+  success: boolean
+  url?: string
+  error?: string
+}
 
-  // Create directory if it doesn't exist
-  await fs.mkdir(uploadDir, { recursive: true });
+export async function uploadFile(file: File): Promise<UploadResult> {
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return { success: false, error: `File type ${file.type} not allowed` }
+  }
 
-  // Convert File to Buffer and write
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
+  if (file.size > MAX_FILE_SIZE) {
+    return { success: false, error: "File exceeds 10MB limit" }
+  }
 
-  const filePath = path.join(uploadDir, filename);
-  await fs.writeFile(filePath, buffer);
+  try {
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+    const ext = file.name.split(".").pop() || "jpg"
+    const filename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+    const uploadDir = join(process.cwd(), "public", "uploads")
 
-  // Return the public URL path
-  return `/uploads/${folder}/${filename}`;
+    await mkdir(uploadDir, { recursive: true })
+    await writeFile(join(uploadDir, filename), buffer)
+
+    return { success: true, url: `/uploads/${filename}` }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Upload failed"
+    return { success: false, error: message }
+  }
 }

@@ -1,81 +1,83 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
+import { inspectionSubmitSchema } from "@/lib/validations/inspection"
+import { emitToUser } from "@/lib/socket-emitter"
 
-export async function POST(request: Request) {
-  const session = await auth();
-  if (!session || !session.user || session.user.role !== "INSPECTOR") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const inspectorId = session.user.id;
-
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { sellerLeadId, ...checklist } = body;
-
-    if (!sellerLeadId) {
-      return NextResponse.json({ error: "Seller Lead ID is required" }, { status: 400 });
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Convert date string to Date object if provided
-    const warrantyExpiry = checklist.warrantyExpiry ? new Date(checklist.warrantyExpiry) : null;
+    const body = await request.json()
+    const validated = inspectionSubmitSchema.parse(body)
 
-    // Verify ownership of the inspection if it already exists
-    const existing = await prisma.inspection.findUnique({
-      where: { sellerLeadId },
-    });
-
-    if (existing && existing.inspectorId !== inspectorId) {
-      return NextResponse.json({ error: "Forbidden: This inspection belongs to another inspector" }, { status: 403 });
-    }
-
-    const dataObj = {
-      ageYears: parseInt(checklist.ageYears) || 0,
-      ageMonths: parseInt(checklist.ageMonths) || 0,
-      kmDriven: parseFloat(checklist.kmDriven) || 0,
-      bodyDamage: checklist.bodyDamage || "pass",
-      bodyDamagePhoto: checklist.bodyDamagePhoto || "",
-      forkDamage: !!checklist.forkDamage,
-      accidentHistory: checklist.accidentHistory || "clean",
-      warrantyStatus: checklist.warrantyStatus || "out_of_warranty",
-      warrantyType: checklist.warrantyType || "",
-      warrantyExpiry,
-      partsReplaced: !!checklist.partsReplaced,
-      replacedParts: checklist.replacedParts || "",
-      adminComments: checklist.adminComments || "",
-      batteryCharge: parseFloat(checklist.batteryCharge) || 0,
-      batteryHealth: parseFloat(checklist.batteryHealth) || 0,
-      batteryVoltage: parseFloat(checklist.batteryVoltage) || 0,
-      physicalDamage: !!checklist.physicalDamage,
-      brakeSystem: checklist.brakeSystem || "pass",
-      brakePads: checklist.brakePads || "good",
-      wheelAlignment: checklist.wheelAlignment || "aligned",
-      testDriveRating: parseInt(checklist.testDriveRating) || 0,
-      testDriveNotes: checklist.testDriveNotes || "",
-      techComments: checklist.techComments || "",
-      inspectorId: inspectorId as string,
-    };
-
-    // Upsert the Inspection checklist record
-    const inspection = await prisma.inspection.upsert({
-      where: { sellerLeadId },
-      update: dataObj,
-      create: {
-        ...dataObj,
-        sellerLeadId,
+    const inspection = await prisma.inspection.create({
+      data: {
+        sellerLeadId: validated.sellerLeadId,
+        inspectorId: session.user.id,
+        ageYears: validated.ageYears,
+        ageMonths: validated.ageMonths,
+        kmDriven: validated.kmDriven,
+        bodyDamage: validated.bodyDamage,
+        bodyDamagePhoto: validated.bodyDamagePhoto,
+        forkDamage: validated.forkDamage,
+        accidentHistory: validated.accidentHistory,
+        warrantyStatus: validated.warrantyStatus,
+        warrantyType: validated.warrantyType,
+        warrantyExpiry: validated.warrantyExpiry ? new Date(validated.warrantyExpiry) : undefined,
+        partsReplaced: validated.partsReplaced,
+        replacedParts: validated.replacedParts,
+        adminComments: validated.adminComments,
+        batteryCharge: validated.batteryCharge,
+        batteryHealth: validated.batteryHealth,
+        batteryVoltage: validated.batteryVoltage,
+        physicalDamage: validated.physicalDamage,
+        brakeSystem: validated.brakeSystem,
+        brakePads: validated.brakePads,
+        wheelAlignment: validated.wheelAlignment,
+        testDriveRating: validated.testDriveRating,
+        testDriveNotes: validated.testDriveNotes,
+        techComments: validated.techComments,
+        finalOffer: validated.finalOffer,
       },
-    });
+    })
 
-    // Update the SellerLead status to INSPECTED
     await prisma.sellerLead.update({
-      where: { id: sellerLeadId },
+      where: { id: validated.sellerLeadId },
       data: { status: "INSPECTED" },
-    });
+    })
 
-    return NextResponse.json({ success: true, id: inspection.id });
+    const sellerLead = await prisma.sellerLead.findUnique({
+      where: { id: validated.sellerLeadId },
+      select: { userId: true },
+    })
+
+    await prisma.activityLog.create({
+      data: {
+        action: "Inspection Submitted",
+        description: `Inspection completed for seller lead`,
+        userId: session.user.id,
+        metadata: { inspectionId: inspection.id, sellerLeadId: validated.sellerLeadId },
+      },
+    })
+
+    if (sellerLead?.userId) {
+      emitToUser(sellerLead.userId, "notification:new", {
+        type: "inspection",
+        title: "Inspection Submitted",
+        message: "Your vehicle inspection has been submitted for review.",
+      })
+    }
+
+    return NextResponse.json({ success: true, inspection })
   } catch (error) {
-    console.error("Submit Inspection Error:", error);
-    return NextResponse.json({ error: "Failed to submit inspection" }, { status: 500 });
+    if (error instanceof Error && error.name === "ZodError") {
+      return NextResponse.json({ success: false, error: "Validation failed", details: error.message }, { status: 400 })
+    }
+    return NextResponse.json({ success: false, error: "Failed to submit inspection" }, { status: 500 })
   }
 }

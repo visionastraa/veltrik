@@ -1,66 +1,51 @@
-import { prisma } from "@/lib/prisma";
+export interface TimeSlot {
+  label: string
+  value: string
+  available: boolean
+}
 
-const BASE_SLOTS = [
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "17:30",
-];
+const DEFAULT_START_HOUR = 9
+const DEFAULT_END_HOUR = 18
+const DEFAULT_SLOT_DURATION_MINUTES = 60
 
-/**
- * Get available booking slots for a given date.
- *
- * - Returns [] if the date is a Sunday.
- * - Removes any slot where 3 or more bookings already exist
- *   for that exact date and time.
- */
-export async function getAvailableSlots(date: string): Promise<string[]> {
-  const dateObj = new Date(date);
+export function generateTimeSlots(
+  date: Date,
+  durationMinutes: number = DEFAULT_SLOT_DURATION_MINUTES,
+  startHour: number = DEFAULT_START_HOUR,
+  endHour: number = DEFAULT_END_HOUR
+): TimeSlot[] {
+  const now = new Date()
+  const isToday = date.toDateString() === now.toDateString()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
-  // Sunday = 0
-  if (dateObj.getUTCDay() === 0) {
-    return [];
+  const slots: TimeSlot[] = []
+  for (let h = startHour; h < endHour; h++) {
+    for (let m = 0; m < 60; m += durationMinutes) {
+      const totalMinutes = h * 60 + m
+      if (isToday && totalMinutes <= currentMinutes + 30) continue
+
+      const label = `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`
+      const endH = Math.floor((totalMinutes + durationMinutes) / 60)
+      const endM = (totalMinutes + durationMinutes) % 60
+      const endLabel = `${endH.toString().padStart(2, "0")}:${endM.toString().padStart(2, "0")}`
+      slots.push({
+        label: `${label} - ${endLabel}`,
+        value: `${label}:00`,
+        available: true,
+      })
+    }
   }
+  return slots
+}
 
-  // Build start/end of the day for querying
-  const dayStart = new Date(date);
-  dayStart.setUTCHours(0, 0, 0, 0);
+export function getMinDate(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return d.toISOString().split("T")[0]
+}
 
-  const dayEnd = new Date(date);
-  dayEnd.setUTCHours(23, 59, 59, 999);
-
-  // Get all bookings for this date
-  const bookings = await prisma.booking.findMany({
-    where: {
-      scheduledAt: {
-        gte: dayStart,
-        lte: dayEnd,
-      },
-    },
-    select: {
-      scheduledAt: true,
-    },
-  });
-
-  // Count bookings per slot
-  const slotCounts = new Map<string, number>();
-
-  for (const booking of bookings) {
-    const hours = booking.scheduledAt.getUTCHours().toString().padStart(2, "0");
-    const minutes = booking.scheduledAt.getUTCMinutes().toString().padStart(2, "0");
-    const timeKey = `${hours}:${minutes}`;
-
-    slotCounts.set(timeKey, (slotCounts.get(timeKey) || 0) + 1);
-  }
-
-  // Filter out slots with >= 3 bookings
-  return BASE_SLOTS.filter((slot) => {
-    const count = slotCounts.get(slot) || 0;
-    return count < 3;
-  });
+export function getMaxDate(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return d.toISOString().split("T")[0]
 }
