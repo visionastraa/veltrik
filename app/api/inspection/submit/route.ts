@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         action: "Inspection Submitted",
         description: `Inspection completed for seller lead`,
         userId: session.user.id,
-        metadata: { inspectionId: inspection.id, sellerLeadId: validated.sellerLeadId },
+        metadata: JSON.stringify({ inspectionId: inspection.id, sellerLeadId: validated.sellerLeadId }),
       },
     })
 

@@ -15,7 +15,7 @@ interface BookingItem {
     model: string;
     year: number;
     status: string;
-    seller: {
+    user: {
       name: string | null;
       phone: string | null;
     };
@@ -93,7 +93,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
     const searchTerm = search.toLowerCase();
 
     return (
-      lead?.brand.toLowerCase().includes(searchTerm) ||
+      lead?.make.toLowerCase().includes(searchTerm) ||
       lead?.model.toLowerCase().includes(searchTerm) ||
       seller?.name?.toLowerCase().includes(searchTerm) ||
       false

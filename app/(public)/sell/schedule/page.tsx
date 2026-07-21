@@ -141,7 +141,7 @@ export default function SellStep2Page() {
                 </div>
                 <div>
                   <Label className="text-xs">Time Slot</Label>
-                  <Select value={formData.selectedSlot} onValueChange={(v) => update("selectedSlot", v)} disabled={!formData.selectedDate}>
+                  <Select value={formData.selectedSlot} onValueChange={(v: string) => update("selectedSlot", v)} disabled={!formData.selectedDate}>
                     <SelectTrigger className="mt-1"><SelectValue placeholder={formData.selectedDate ? "Select time" : "Pick a date first"} /></SelectTrigger>
                     <SelectContent>
                       {availableSlots.map(slot => (

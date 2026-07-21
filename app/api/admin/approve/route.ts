@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       // 3. Create Listing (title: Make Model Year)
       await tx.listing.create({
         data: {
-          sellerLeadId: inspection.sellerLeadId,
+          inspectionId: inspection.id,
           title: `${inspection.sellerLead.make} ${inspection.sellerLead.model} ${inspection.sellerLead.year}`,
           price: parseFloat(finalOffer),
           status: "AVAILABLE",

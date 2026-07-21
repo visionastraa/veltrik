@@ -13,7 +13,7 @@ interface QueueItem {
     make: string;
     model: string;
     year: number;
-    seller: {
+    user: {
       name: string | null;
       phone: string | null;
     };
@@ -43,7 +43,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
     const seller = lead?.user || b.user;
     const searchTerm = search.toLowerCase();
     
-    const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
+    const brandMatch = lead?.make.toLowerCase().includes(searchTerm) || false;
     const modelMatch = lead?.model.toLowerCase().includes(searchTerm) || false;
     const nameMatch = seller?.name?.toLowerCase().includes(searchTerm) || false;
     const textMatch = brandMatch || modelMatch || nameMatch;

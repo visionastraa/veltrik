@@ -82,7 +82,7 @@ async function main() {
         expectedPrice: v.expectedPrice,
         description: v.description,
         warrantyStatus: v.warrantyStatus,
-        photos: [`/api/placeholder/800/600?text=${encodeURIComponent(v.make + " " + v.model)}`],
+        photos: JSON.stringify([`/api/placeholder/800/600?text=${encodeURIComponent(v.make + " " + v.model)}`]),
         status: "ACQUIRED",
       },
     })
@@ -115,7 +115,7 @@ async function main() {
         inspectionId: inspection.id,
         title: `${v.year} ${v.make} ${v.model} ${v.variant}`,
         price: v.finalOffer,
-        photos: [`/api/placeholder/800/600?text=${encodeURIComponent(v.make + " " + v.model)}`],
+        photos: JSON.stringify([`/api/placeholder/800/600?text=${encodeURIComponent(v.make + " " + v.model)}`]),
         status: "AVAILABLE",
         publishedAt: new Date(),
       },

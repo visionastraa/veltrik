@@ -80,7 +80,7 @@ export default function SellStep1Page() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Make *</Label>
-                <Select value={formData.make} onValueChange={(v) => { update("make", v); update("model", ""); setErrors(prev => ({ ...prev, make: "" })) }}>
+                <Select value={formData.make} onValueChange={(v: string) => { update("make", v); update("model", ""); setErrors(prev => ({ ...prev, make: "" })) }}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="Select brand" /></SelectTrigger>
                   <SelectContent>
                     {BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
@@ -90,7 +90,7 @@ export default function SellStep1Page() {
               </div>
               <div>
                 <Label>Model *</Label>
-                <Select value={formData.model} onValueChange={(v) => { update("model", v); setErrors(prev => ({ ...prev, model: "" })) }} disabled={!formData.make}>
+                <Select value={formData.model} onValueChange={(v: string) => { update("model", v); setErrors(prev => ({ ...prev, model: "" })) }} disabled={!formData.make}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder={formData.make ? "Select model" : "Select brand first"} /></SelectTrigger>
                   <SelectContent>
                     {getModelsByBrand(formData.make).map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}

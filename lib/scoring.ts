@@ -26,10 +26,10 @@ export function calculateScore(inspection: Inspection): ScoreResult {
   let score = 0;
 
   // ── Battery Health (35 pts) ──
-  score += inspection.batteryHealth * 0.35;
+  score += (inspection.batteryHealth || 0) * 0.35;
 
   // ── KM Driven (20 pts) ──
-  const km = inspection.kmDriven;
+  const km = inspection.kmDriven || 0;
   if (km <= 0) {
     score += 20;
   } else if (km <= 10000) {
@@ -45,7 +45,7 @@ export function calculateScore(inspection: Inspection): ScoreResult {
   }
 
   // ── Vehicle Age in Years (15 pts) ──
-  const age = inspection.ageYears;
+  const age = inspection.ageYears || 0;
   if (age <= 1) {
     score += 15;
   } else if (age === 2) {
@@ -59,7 +59,7 @@ export function calculateScore(inspection: Inspection): ScoreResult {
   }
 
   // ── Body Damage (15 pts) ──
-  switch (inspection.bodyDamage.toLowerCase()) {
+  switch ((inspection.bodyDamage || "").toLowerCase()) {
     case "pass":
       score += 15;
       break;
@@ -73,7 +73,7 @@ export function calculateScore(inspection: Inspection): ScoreResult {
   }
 
   // ── Brake System (10 pts) ──
-  switch (inspection.brakeSystem.toLowerCase()) {
+  switch ((inspection.brakeSystem || "").toLowerCase()) {
     case "pass":
       score += 10;
       break;
@@ -84,7 +84,7 @@ export function calculateScore(inspection: Inspection): ScoreResult {
   }
 
   // ── Accident History (5 pts) ──
-  switch (inspection.accidentHistory.toLowerCase()) {
+  switch ((inspection.accidentHistory || "").toLowerCase()) {
     case "clean":
       score += 5;
       break;

@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         action: "Payment Completed",
         description: `Payment of ₹${(payment.amount).toLocaleString()} completed`,
         userId: session.user.id,
-        metadata: { paymentId: payment.id, razorpayPaymentId },
+        metadata: JSON.stringify({ paymentId: payment.id, razorpayPaymentId }),
       },
     })
 

@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         expectedPrice: validated.expectedPrice,
         description: validated.description,
         warrantyStatus: validated.warrantyStatus || "none",
-        photos: validated.photos,
+        photos: JSON.stringify(validated.photos),
         status: "SUBMITTED",
       },
     })
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         action: "Seller Lead Created",
         description: `${validated.make} ${validated.model} submitted for selling`,
         userId: session.user.id,
-        metadata: { leadId: lead.id },
+        metadata: JSON.stringify({ leadId: lead.id }),
       },
     })
 

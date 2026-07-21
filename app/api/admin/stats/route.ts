@@ -44,12 +44,12 @@ export async function GET() {
       prisma.sellerLead.findMany({
         take: 5,
         orderBy: { updatedAt: 'desc' },
-        include: { seller: { select: { name: true } } }
+        include: { user: { select: { name: true } } }
       }),
       prisma.buyerLead.findMany({
         take: 5,
         orderBy: { updatedAt: 'desc' },
-        include: { buyer: { select: { name: true } } }
+        include: { user: { select: { name: true } } }
       })
     ]);
 
@@ -59,7 +59,7 @@ export async function GET() {
         id: l.id,
         type: 'SELLER',
         title: `${l.make} ${l.model}`,
-        user: l.seller.name || 'Unknown',
+        user: l.user?.name || 'Unknown',
         status: l.status,
         date: l.updatedAt
       })),
@@ -67,7 +67,7 @@ export async function GET() {
         id: l.id,
         type: 'BUYER',
         title: 'Interest shown',
-        user: l.buyer.name || 'Unknown',
+        user: l.user?.name || 'Unknown',
         status: l.status,
         date: l.updatedAt
       }))

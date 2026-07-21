@@ -18,8 +18,8 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id,
         listingId: validated.listingId,
-        brandsInterested: validated.brandsInterested,
-        modelsInterested: validated.modelsInterested,
+        brandsInterested: JSON.stringify(validated.brandsInterested),
+        modelsInterested: JSON.stringify(validated.modelsInterested),
       },
     })
 

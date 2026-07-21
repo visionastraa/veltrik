@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     const role = (session?.user as any)?.role;
 
@@ -20,7 +21,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (status !== undefined) dataToUpdate.status = status;
 
     const listing = await prisma.listing.update({
-      where: { id: params.id },
+      where: { id },
       data: dataToUpdate,
     });
 

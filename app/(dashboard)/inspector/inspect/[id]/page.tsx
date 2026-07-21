@@ -81,7 +81,7 @@ export default async function InspectPage({ params }: InspectPageProps) {
         vehicleName={vehicleName}
         sellerName={sellerName}
         sellerPhone={sellerPhone}
-        askingPrice={lead.askingPrice}
+        askingPrice={lead.expectedPrice}
         make={lead.make}
         model={lead.model}
         year={lead.year}

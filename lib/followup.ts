@@ -57,7 +57,7 @@ export async function triggerFollowUpAutoFlags() {
     await sendEmail({
       to: adminEmail,
       subject: `Veltrik: ${leadsToUpdate.length} Leads Require Follow-Up`,
-      text: `${leadsToUpdate.length} buyer visits occurred over 24 hours ago. Please check the CRM dashboard and follow up with the customers.`
+      html: `${leadsToUpdate.length} buyer visits occurred over 24 hours ago. Please check the CRM dashboard and follow up with the customers.`
     });
 
     return { updatedCount: result.count };

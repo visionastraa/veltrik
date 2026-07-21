@@ -25,7 +25,7 @@ export default async function AdminListingsPage() {
   const listings = await prisma.listing.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      sellerLead: { select: { vehicleNumber: true } },
+      inspection: { include: { sellerLead: { select: { vehicleNumber: true } } } },
       _count: { select: { buyerLeads: true, bookings: true } }
     },
   });
@@ -67,7 +67,7 @@ export default async function AdminListingsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{listing.title}</div>
-                    <div className="text-xs text-muted-foreground">{listing.sellerLead.vehicleNumber}</div>
+                    <div className="text-xs text-muted-foreground">{listing.inspection?.sellerLead?.vehicleNumber || 'N/A'}</div>
                   </TableCell>
                   <TableCell>
                     <div className="text-xs space-y-1">

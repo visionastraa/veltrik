@@ -8,17 +8,17 @@ import { Button } from "@/components/ui/button";
 interface HistoryItem {
   id: string;
   createdAt: Date;
-  ageYears: number;
-  ageMonths: number;
-  kmDriven: number;
-  batteryHealth: number;
-  testDriveRating: number;
+  ageYears: number | null;
+  ageMonths: number | null;
+  kmDriven: number | null;
+  batteryHealth: number | null;
+  testDriveRating: number | null;
   sellerLead: {
     id: string;
     make: string;
     model: string;
     year: number;
-    seller: {
+    user: {
       name: string | null;
       phone: string | null;
     };
@@ -45,7 +45,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
     const seller = lead?.user;
     const searchTerm = search.toLowerCase();
     
-    const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
+    const brandMatch = lead?.make.toLowerCase().includes(searchTerm) || false;
     const modelMatch = lead?.model.toLowerCase().includes(searchTerm) || false;
     const nameMatch = seller?.name?.toLowerCase().includes(searchTerm) || false;
     const textMatch = brandMatch || modelMatch || nameMatch;
@@ -60,11 +60,11 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
 
     // Mileage filter
     if (mileageFilter === "under10") {
-      if (ins.kmDriven >= 10000) return false;
+      if ((ins.kmDriven || 0) >= 10000) return false;
     } else if (mileageFilter === "10to50") {
-      if (ins.kmDriven < 10000 || ins.kmDriven > 50000) return false;
+      if ((ins.kmDriven || 0) < 10000 || (ins.kmDriven || 0) > 50000) return false;
     } else if (mileageFilter === "over50") {
-      if (ins.kmDriven <= 50000) return false;
+      if ((ins.kmDriven || 0) <= 50000) return false;
     }
 
     // Date range checking
