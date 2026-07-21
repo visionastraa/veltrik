@@ -1,9 +1,10 @@
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import HistoryTable from "@/components/inspector/HistoryTable";
 
 export default async function HistoryPage() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session || !session.user || session.user.role !== "INSPECTOR") return null;
 
   const inspectorId = session.user.id;
@@ -16,7 +17,7 @@ export default async function HistoryPage() {
     include: {
       sellerLead: {
         include: {
-          seller: true,
+          user: true,
         },
       },
     },

@@ -16,7 +16,7 @@ interface InspectionFormClientProps {
   sellerName: string;
   sellerPhone: string;
   askingPrice: number | null;
-  brand: string;
+  make: string;
   model: string;
   year: number;
   photos: string; // JSON array as string
@@ -30,7 +30,7 @@ export default function InspectionFormClient({
   sellerName,
   sellerPhone,
   askingPrice,
-  brand,
+  make,
   model,
   year,
   photos,
@@ -170,7 +170,7 @@ export default function InspectionFormClient({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Brand</span>
-                  <span className="text-base font-bold text-foreground block">{brand}</span>
+                  <span className="text-base font-bold text-foreground block">{make}</span>
                 </div>
                 <div className="space-y-1">
                   <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">Model</span>

@@ -1,4 +1,5 @@
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import InspectorSidebar from "@/components/inspector/InspectorSidebar";
@@ -9,7 +10,7 @@ interface InspectorLayoutProps {
 }
 
 export default async function InspectorLayout({ children }: InspectorLayoutProps) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "";
   const isInspectPage = pathname.startsWith("/inspector/inspect/");

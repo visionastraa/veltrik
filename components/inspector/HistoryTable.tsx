@@ -15,7 +15,7 @@ interface HistoryItem {
   testDriveRating: number;
   sellerLead: {
     id: string;
-    brand: string;
+    make: string;
     model: string;
     year: number;
     seller: {
@@ -42,7 +42,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
   // Filter inspections based on search query, rating, mileage, and date range
   const filteredInspections = inspections.filter((ins) => {
     const lead = ins.sellerLead;
-    const seller = lead?.seller;
+    const seller = lead?.user;
     const searchTerm = search.toLowerCase();
     
     const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
@@ -107,7 +107,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
             </span>
             <input
               type="text"
-              placeholder="Filter by brand, model, or seller name..."
+              placeholder="Filter by make, model, or seller name..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -239,7 +239,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
               <tbody className="divide-y divide-border">
                 {paginatedInspections.map((inspection) => {
                   const lead = inspection.sellerLead;
-                  const seller = lead?.seller;
+                  const seller = lead?.user;
                   const dateStr = new Date(inspection.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -256,7 +256,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
                       </td>
                       <td className="py-4.5 px-6">
                         <span className="text-sm font-extrabold text-foreground block">
-                          {lead ? `${lead.year} ${lead.brand} ${lead.model}` : "Unknown"}
+                          {lead ? `${lead.year} ${lead.make} ${lead.model}` : "Unknown"}
                         </span>
                         <span className="text-xs text-muted-foreground font-medium block">
                           Age: {inspection.ageYears}y {inspection.ageMonths}m

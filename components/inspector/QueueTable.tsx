@@ -10,7 +10,7 @@ interface QueueItem {
   scheduledAt: Date;
   sellerLead: {
     id: string;
-    brand: string;
+    make: string;
     model: string;
     year: number;
     seller: {
@@ -40,7 +40,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
   // Filter bookings based on search query, time of day, and date range
   const filteredBookings = bookings.filter((b) => {
     const lead = b.sellerLead;
-    const seller = lead?.seller || b.user;
+    const seller = lead?.user || b.user;
     const searchTerm = search.toLowerCase();
     
     const brandMatch = lead?.brand.toLowerCase().includes(searchTerm) || false;
@@ -101,7 +101,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
             </span>
             <input
               type="text"
-              placeholder="Filter by brand, model, or seller name..."
+              placeholder="Filter by make, model, or seller name..."
               value={search}
               onChange={handleSearchChange}
               className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/25"
@@ -210,7 +210,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
               <tbody className="divide-y divide-border">
                 {paginatedBookings.map((booking) => {
                   const lead = booking.sellerLead;
-                  const seller = lead?.seller || booking.user;
+                  const seller = lead?.user || booking.user;
                   const dateStr = new Date(booking.scheduledAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -236,7 +236,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                         </div>
                       </td>
                       <td className="py-4.5 px-6 font-bold text-foreground text-sm">
-                        {lead ? `${lead.year} ${lead.brand} ${lead.model}` : "Unknown Vehicle"}
+                        {lead ? `${lead.year} ${lead.make} ${lead.model}` : "Unknown Vehicle"}
                       </td>
                       <td className="py-4.5 px-6">
                         <div className="space-y-1">

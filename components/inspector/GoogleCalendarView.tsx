@@ -11,7 +11,7 @@ interface BookingItem {
   scheduledAt: Date;
   sellerLead: {
     id: string;
-    brand: string;
+    make: string;
     model: string;
     year: number;
     status: string;
@@ -84,7 +84,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
     if (!dateMatch) return false;
 
     const lead = b.sellerLead;
-    const seller = lead?.seller || b.user;
+    const seller = lead?.user || b.user;
     const isCompleted = lead?.status === "INSPECTED";
 
     if (statusFilter === "completed" && !isCompleted) return false;
@@ -205,7 +205,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
           {timeSlots.map((slot) => {
             const booking = getBookingForHour(slot.hour);
             const lead = booking?.sellerLead;
-            const seller = lead?.seller || booking?.user;
+            const seller = lead?.user || booking?.user;
             const isCompleted = lead?.status === "INSPECTED";
 
             return (
@@ -230,7 +230,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
                     >
                       <div className="space-y-1">
                         <h4 className="text-sm font-extrabold tracking-tight">
-                          {lead ? `${lead.year} ${lead.brand} ${lead.model}` : "Inspection Appointment"}
+                          {lead ? `${lead.year} ${lead.make} ${lead.model}` : "Inspection Appointment"}
                         </h4>
                         
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs opacity-85">

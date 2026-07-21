@@ -1,9 +1,10 @@
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import GoogleCalendarView from "@/components/inspector/GoogleCalendarView";
 
 export default async function CalendarPage() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session || !session.user || session.user.role !== "INSPECTOR") return null;
 
   // Fetch all scheduled inspections
@@ -14,7 +15,7 @@ export default async function CalendarPage() {
     include: {
       sellerLead: {
         include: {
-          seller: true,
+          user: true,
           inspection: true,
         },
       },

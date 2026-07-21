@@ -1,67 +1,73 @@
-import { NextRequest, NextResponse } from "next/server"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { emitToUser } from "@/lib/socket-emitter"
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !["ADMIN", "MANAGER"].includes(session.user.role)) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 })
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as any)?.role;
+    const adminId = (session?.user as any)?.id;
+
+    // Only Managers can approve (project.md: "MANAGER role required to approve/reject")
+    if (!session || !["MANAGER", "ADMIN"].includes(role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { inspectionId, offerPrice } = await request.json()
+    const body = await req.json();
+    const { inspectionId, finalOffer } = body;
 
-    const inspection = await prisma.inspection.update({
+    if (!inspectionId || !finalOffer) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const inspection = await prisma.inspection.findUnique({
       where: { id: inspectionId },
-      data: {
-        finalOffer: offerPrice,
-        approvedById: session.user.id,
-        approvedAt: new Date(),
-      },
-      include: { sellerLead: true },
-    })
+      include: { sellerLead: true }
+    });
 
-    await prisma.sellerLead.update({
-      where: { id: inspection.sellerLeadId },
-      data: { status: "ACQUIRED" },
-    })
-
-    const listing = await prisma.listing.create({
-      data: {
-        inspectionId,
-        title: `${inspection.sellerLead.year} ${inspection.sellerLead.make} ${inspection.sellerLead.model} ${inspection.sellerLead.variant}`,
-        price: offerPrice,
-        photos: inspection.sellerLead.photos,
-        publishedAt: new Date(),
-      },
-    })
-
-    const sellerLead = await prisma.sellerLead.findUnique({
-      where: { id: inspection.sellerLeadId },
-      select: { userId: true },
-    })
-
-    await prisma.activityLog.create({
-      data: {
-        action: "Vehicle Approved & Listed",
-        description: `Approved and listed for ${offerPrice}`,
-        userId: session.user.id,
-        metadata: { inspectionId, listingId: listing.id },
-      },
-    })
-
-    if (sellerLead?.userId) {
-      emitToUser(sellerLead.userId, "notification:new", {
-        type: "approved",
-        title: "Vehicle Approved",
-        message: `Your ${listing.title} has been approved and listed at ₹${(offerPrice / 100000).toFixed(2)}L.`,
-      })
+    if (!inspection) {
+      return NextResponse.json({ error: "Inspection not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, inspection, listing })
-  } catch {
-    return NextResponse.json({ success: false, error: "Failed to approve" }, { status: 500 })
+    if (inspection.sellerLead.status === "ACQUIRED") {
+      return NextResponse.json({ error: "Already approved" }, { status: 400 });
+    }
+
+    // Transaction to update inspection, lead, and create listing
+    await prisma.$transaction(async (tx) => {
+      // 1. Update Inspection with offer
+      await tx.inspection.update({
+        where: { id: inspectionId },
+        data: {
+          finalOffer: parseFloat(finalOffer),
+          approvedBy: adminId,
+          approvedAt: new Date(),
+        }
+      });
+
+      // 2. Update Seller Lead Status
+      await tx.sellerLead.update({
+        where: { id: inspection.sellerLeadId },
+        data: { status: "ACQUIRED" }
+      });
+
+      // 3. Create Listing (title: Make Model Year)
+      await tx.listing.create({
+        data: {
+          sellerLeadId: inspection.sellerLeadId,
+          title: `${inspection.sellerLead.make} ${inspection.sellerLead.model} ${inspection.sellerLead.year}`,
+          price: parseFloat(finalOffer),
+          status: "AVAILABLE",
+          photos: inspection.sellerLead.photos, // Carry over photos for the listing
+          publishedAt: new Date(),
+        }
+      });
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[ADMIN_APPROVE]", error);
+    return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

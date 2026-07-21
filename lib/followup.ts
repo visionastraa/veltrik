@@ -1,52 +1,68 @@
-export interface FollowupSchedule {
-  leadId: string
-  type: "buyer" | "seller"
-  scheduledAt: Date
-  note?: string
-}
+import { prisma } from "./prisma";
+import { sendEmail } from "./mailer";
 
-const FOLLOWUP_INTERVALS: Record<string, number> = {
-  immediate: 0,
-  day1: 1,
-  day3: 3,
-  week1: 7,
-  week2: 14,
-  month1: 30,
-}
+/**
+ * Checks all BuyerLeads in LEAD_VISIT_SCHEDULED status.
+ * If their booking visit time was more than 24 hours ago,
+ * marks them as FOLLOW_UP_REQUIRED and sends an email.
+ */
+export async function triggerFollowUpAutoFlags() {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-export function calculateFollowupDate(from: Date, interval: keyof typeof FOLLOWUP_INTERVALS): Date {
-  const days = FOLLOWUP_INTERVALS[interval] || 7
-  const result = new Date(from)
-  result.setDate(result.getDate() + days)
-  return result
-}
+  try {
+    const overdueLeads = await prisma.buyerLead.findMany({
+      where: {
+        status: "LEAD_VISIT_SCHEDULED",
+        listingId: { not: null },
+      },
+      include: {
+        user: true,
+        listing: true
+      }
+    });
 
-export function getDefaultFollowupSchedule(leadId: string, type: "buyer" | "seller"): FollowupSchedule[] {
-  const now = new Date()
-  if (type === "buyer") {
-    return [
-      { leadId, type, scheduledAt: calculateFollowupDate(now, "day1"), note: "Initial follow-up: ask if they found what they're looking for" },
-      { leadId, type, scheduledAt: calculateFollowupDate(now, "week1"), note: "Second follow-up: share new listings matching their interest" },
-      { leadId, type, scheduledAt: calculateFollowupDate(now, "month1"), note: "Final follow-up: check if still interested" },
-    ]
-  }
-  return [
-    { leadId, type, scheduledAt: calculateFollowupDate(now, "day1"), note: "Initial follow-up: update on inspection status" },
-    { leadId, type, scheduledAt: calculateFollowupDate(now, "day3"), note: "Update on offer/listing progress" },
-    { leadId, type, scheduledAt: calculateFollowupDate(now, "week2"), note: "Check if vehicle is still available or sold" },
-  ]
-}
+    if (overdueLeads.length === 0) return { updatedCount: 0 };
 
-export async function scheduleFollowups(schedules: FollowupSchedule[]): Promise<{ success: boolean }> {
-  for (const s of schedules) {
-    const delayMs = s.scheduledAt.getTime() - Date.now()
-    if (delayMs <= 0) {
-      console.warn(`[followup] Skipping past date for lead ${s.leadId}`)
-      continue
+    // Find the latest booking for each lead to check if it's in the past
+    // Note: Since bookings are tied to user + listing, we query them.
+    const leadsToUpdate: string[] = [];
+
+    for (const lead of overdueLeads) {
+      const bookings = await prisma.booking.findMany({
+        where: {
+          userId: lead.userId,
+          listingId: lead.listingId,
+          type: "BUYER_VISIT",
+          scheduledAt: { lt: twentyFourHoursAgo }
+        },
+        orderBy: { scheduledAt: 'desc' },
+        take: 1
+      });
+
+      if (bookings.length > 0) {
+        leadsToUpdate.push(lead.id);
+      }
     }
-    setTimeout(() => {
-      console.log(`[followup] Triggering ${s.type} follow-up for lead ${s.leadId}: ${s.note || "No notes"}`)
-    }, delayMs)
+
+    if (leadsToUpdate.length === 0) return { updatedCount: 0 };
+
+    // Update statuses
+    const result = await prisma.buyerLead.updateMany({
+      where: { id: { in: leadsToUpdate } },
+      data: { status: "FOLLOW_UP_REQUIRED" }
+    });
+
+    // Notify sales team
+    const adminEmail = process.env.SMTP_USER || "sales@veltrik.com";
+    await sendEmail({
+      to: adminEmail,
+      subject: `Veltrik: ${leadsToUpdate.length} Leads Require Follow-Up`,
+      text: `${leadsToUpdate.length} buyer visits occurred over 24 hours ago. Please check the CRM dashboard and follow up with the customers.`
+    });
+
+    return { updatedCount: result.count };
+  } catch (error) {
+    console.error("[FOLLOWUP_JOB_ERROR]", error);
+    return { error: "Failed to run follow-up job", updatedCount: 0 };
   }
-  return { success: true }
 }

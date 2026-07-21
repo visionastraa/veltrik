@@ -4,43 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-enum Role {
-  BUYER
-  SELLER
-  INSPECTOR
-  ADMIN
-  MANAGER
-}
-
-enum SellerStatus {
-  SUBMITTED
-  SCHEDULED
-  INSPECTED
-  OFFER_MADE
-  ACQUIRED
-  REJECTED
-}
-
-enum ListingStatus {
-  AVAILABLE
-  RESERVED
-  SOLD
-}
-
-enum BookingType {
-  SELLER_INSPECTION
-  BUYER_VISIT
-}
-
-enum BuyerStatus {
-  LEAD_VISIT_SCHEDULED
-  FOLLOW_UP_REQUIRED
-  CONVERTED
-  LOST
 }
 
 model User {
@@ -49,7 +14,7 @@ model User {
   email     String   @unique
   password  String?
   phone     String?
-  role      Role     @default(BUYER)
+  role      String   @default("BUYER")
   emailVerified DateTime?
   image     String?
   createdAt DateTime @default(now())
@@ -85,8 +50,8 @@ model SellerLead {
   warrantyStatus String
   expectedPrice  Float
   description    String?
-  photos         String[]
-  status         SellerStatus   @default(SUBMITTED)
+  photos         String         @default("[]")
+  status         String         @default("SUBMITTED")
   scheduledAt    DateTime?
   
   createdAt      DateTime       @default(now())
@@ -156,8 +121,8 @@ model Listing {
   
   title          String
   price          Float
-  status         ListingStatus  @default(AVAILABLE)
-  photos         String[]
+  status         String         @default("AVAILABLE")
+  photos         String         @default("[]")
   publishedAt    DateTime?
   
   createdAt      DateTime       @default(now())
@@ -180,9 +145,9 @@ model BuyerLead {
   listingId         String?
   listing           Listing?    @relation(fields: [listingId], references: [id])
   
-  brandsInterested  String[]
-  modelsInterested  String[]
-  status            BuyerStatus @default(LEAD_VISIT_SCHEDULED)
+  brandsInterested  String      @default("[]")
+  modelsInterested  String      @default("[]")
+  status            String      @default("LEAD_VISIT_SCHEDULED")
   
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -195,7 +160,7 @@ model BuyerLead {
 
 model Booking {
   id             String      @id @default(cuid())
-  type           BookingType
+  type           String
   
   // For seller inspections
   sellerLeadId   String?
@@ -247,7 +212,7 @@ model ActivityLog {
   description    String
   userId         String
   user           User     @relation(fields: [userId], references: [id])
-  metadata       Json?
+  metadata       String?
   createdAt      DateTime @default(now())
 
   @@map("activity_logs")

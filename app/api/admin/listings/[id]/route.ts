@@ -13,20 +13,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     }
 
     const body = await req.json();
-    const { status } = body;
+    const { price, status } = body;
 
-    if (!status) {
-      return NextResponse.json({ error: "Missing status" }, { status: 400 });
-    }
+    const dataToUpdate: any = {};
+    if (price !== undefined) dataToUpdate.price = parseFloat(price);
+    if (status !== undefined) dataToUpdate.status = status;
 
-    const lead = await prisma.buyerLead.update({
+    const listing = await prisma.listing.update({
       where: { id: params.id },
-      data: { status },
+      data: dataToUpdate,
     });
 
-    return NextResponse.json({ success: true, lead });
+    return NextResponse.json({ success: true, listing });
   } catch (error) {
-    console.error("[ADMIN_BUYER_UPDATE]", error);
+    console.error("[ADMIN_LISTING_UPDATE]", error);
     return NextResponse.json({ error: "Internal Error" }, { status: 500 });
   }
 }

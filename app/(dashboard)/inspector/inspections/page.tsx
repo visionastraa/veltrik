@@ -1,9 +1,10 @@
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import QueueTable from "@/components/inspector/QueueTable";
 
 export default async function InspectionsPage() {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session || !session.user || session.user.role !== "INSPECTOR") return null;
 
   // Fetch all pending inspection bookings
@@ -19,7 +20,7 @@ export default async function InspectionsPage() {
     include: {
       sellerLead: {
         include: {
-          seller: true,
+          user: true,
         },
       },
       user: true,

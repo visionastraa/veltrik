@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const session = await auth();
-  if (!session || !session.user || session.user.role !== "INSPECTOR") {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user || (session.user as any).role !== "INSPECTOR") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const inspectorId = session.user.id;
+  const inspectorId = (session.user as any).id;
 
   try {
     const todayStart = new Date();
@@ -98,7 +99,7 @@ export async function GET() {
       include: {
         sellerLead: {
           include: {
-            seller: true,
+            user: true,
             inspection: true,
           },
         },
@@ -138,7 +139,7 @@ export async function GET() {
     // Format schedule list
     const schedule = myBookings.map((b) => {
       const lead = b.sellerLead;
-      const seller = lead?.seller || b.user;
+      const seller = lead?.user || b.user;
       
       let status: "completed" | "in-progress" | "not-started" | "missed" = "not-started";
       if (lead?.status === "INSPECTED" || lead?.inspection) {
@@ -159,7 +160,7 @@ export async function GET() {
         }),
         sellerName: seller?.name || "Unknown Seller",
         sellerPhone: seller?.phone || "",
-        vehicleName: lead ? `${lead.year} ${lead.brand} ${lead.model}` : "Unknown Vehicle",
+        vehicleName: lead ? `${lead.year} ${lead.make} ${lead.model}` : "Unknown Vehicle",
         sellerLeadId: lead?.id || "",
         status,
       };

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import InspectionFormClient from "./InspectionFormClient";
 
@@ -8,7 +9,7 @@ interface InspectPageProps {
 }
 
 export default async function InspectPage({ params }: InspectPageProps) {
-  const session = await auth();
+  const session = await getServerSession(authOptions);
   if (!session || !session.user) {
     return null; // Layout handles redirect
   }
@@ -19,7 +20,7 @@ export default async function InspectPage({ params }: InspectPageProps) {
   const lead = await prisma.sellerLead.findUnique({
     where: { id: sellerLeadId },
     include: {
-      seller: true,
+      user: true,
       inspection: true,
     },
   });
@@ -35,7 +36,7 @@ export default async function InspectPage({ params }: InspectPageProps) {
   // Only the assigned seller ("assigned user") or the assigned inspector (if created) can view this.
   // If the inspection does not exist yet, any INSPECTOR can access it to start the checklist.
   // ADMIN and MANAGER can always access.
-  const isSeller = lead.sellerId === userId;
+  const isSeller = lead.userId === userId;
   const isAssignedInspector = lead.inspection ? lead.inspection.inspectorId === userId : userRole === "INSPECTOR";
   const isAdminOrManager = userRole === "ADMIN" || userRole === "MANAGER";
 
@@ -56,9 +57,9 @@ export default async function InspectPage({ params }: InspectPageProps) {
     redirect(`/unauthorized?from=${encodeURIComponent(`/inspector/inspect/${sellerLeadId}`)}&reason=missed`);
   }
 
-  const vehicleName = `${lead.year} ${lead.brand} ${lead.model}`;
-  const sellerName = lead.seller.name || "Unknown Seller";
-  const sellerPhone = lead.seller.phone || "";
+  const vehicleName = `${lead.year} ${lead.make} ${lead.model}`;
+  const sellerName = lead.user.name || "Unknown Seller";
+  const sellerPhone = lead.user.phone || "";
 
   // The view is read-only if the user is a SELLER (owner) or an ADMIN/MANAGER (viewing checklist of another inspector)
   // or if they are an inspector but the inspection is already completed by someone else (covered by assignment check).
@@ -81,7 +82,7 @@ export default async function InspectPage({ params }: InspectPageProps) {
         sellerName={sellerName}
         sellerPhone={sellerPhone}
         askingPrice={lead.askingPrice}
-        brand={lead.brand}
+        make={lead.make}
         model={lead.model}
         year={lead.year}
         photos={lead.photos}
