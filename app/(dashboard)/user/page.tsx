@@ -83,7 +83,7 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="group relative" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <Link href={`/vehicles/${vehicle.id}`}>
+      <Link href={`/inventory/${vehicle.id}`}>
         <Card className="overflow-hidden border-0 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white rounded-2xl">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
             {vehicle.photos?.[0] ? (

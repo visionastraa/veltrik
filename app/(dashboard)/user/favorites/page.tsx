@@ -75,7 +75,7 @@ export default function FavoritesPage() {
               const kmDriven = insp?.kmDriven ?? sl?.kmDriven ?? 0
               return (
                 <Card key={vehicle.id} className="overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 bg-white rounded-2xl">
-                  <Link href={`/vehicles/${vehicle.id}`}>
+                  <Link href={`/inventory/${vehicle.id}`}>
                     <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
                       {vehicle.photos?.[0] ? (
                         <img src={vehicle.photos[0]} alt={vehicle.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
@@ -86,7 +86,7 @@ export default function FavoritesPage() {
                     </div>
                   </Link>
                   <div className="p-4">
-                    <Link href={`/vehicles/${vehicle.id}`}><h3 className="font-semibold text-sm hover:text-primary transition-colors">{vehicle.title}</h3></Link>
+                    <Link href={`/inventory/${vehicle.id}`}><h3 className="font-semibold text-sm hover:text-primary transition-colors">{vehicle.title}</h3></Link>
                     <div className="flex items-center gap-2 text-xs text-gray-500 mt-1">
                       {batteryHealth != null && <span className="flex items-center gap-1"><Battery className="w-3 h-3 text-primary" />{Math.round(batteryHealth)}%</span>}
                       <span className="flex items-center gap-1"><Gauge className="w-3 h-3 text-primary" />{kmDriven.toLocaleString()} km</span>
@@ -95,7 +95,7 @@ export default function FavoritesPage() {
                       <span className="text-lg font-bold text-primary">{(vehicle.price / 100000).toFixed(2)}L</span>
                     </div>
                     <div className="flex gap-2 mt-3">
-                      <Link href={`/vehicles/${vehicle.id}`} className="flex-1"><Button className="w-full bg-primary hover:bg-primary-dark text-white" size="sm"><Eye className="w-4 h-4 mr-1" />View</Button></Link>
+                      <Link href={`/inventory/${vehicle.id}`} className="flex-1"><Button className="w-full bg-primary hover:bg-primary-dark text-white" size="sm"><Eye className="w-4 h-4 mr-1" />View</Button></Link>
                       <Button variant="outline" size="sm" onClick={() => toggleWishlist.mutate(vehicle.id)} disabled={toggleWishlist.isPending} className="hover:bg-red-50 hover:border-red-200">
                         {toggleWishlist.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 text-red-500" />}
                       </Button>

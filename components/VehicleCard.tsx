@@ -115,7 +115,7 @@ export function VehicleCard({
             <span className="text-xl font-extrabold text-primary">{formattedPrice}</span>
           </div>
 
-          <Link href={`/vehicles/${id}`}>
+          <Link href={`/inventory/${id}`}>
             <Button size="sm" className="rounded-xl bg-gray-900 text-white hover:bg-primary transition-colors group/btn">
               Details
               <ArrowRight className="w-3.5 h-3.5 ml-1 transition-transform group-hover/btn:translate-x-0.5" />

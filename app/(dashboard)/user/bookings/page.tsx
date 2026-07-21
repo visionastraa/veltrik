@@ -110,7 +110,7 @@ function BookingCard({ booking }: { booking: any }) {
         }>
           {booking.status.toUpperCase()}
         </Badge>
-        {listing && <Link href={`/vehicles/${listing.id}`}><Button variant="outline" size="sm">View Vehicle</Button></Link>}
+        {listing && <Link href={`/inventory/${listing.id}`}><Button variant="outline" size="sm">View Vehicle</Button></Link>}
       </div>
     </Card>
   )

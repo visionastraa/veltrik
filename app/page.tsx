@@ -160,7 +160,7 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {vehicles.map((v, i) => (
                 <motion.div key={v.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                  <Link href={`/vehicles/${v.id}`}>
+                  <Link href={`/inventory/${v.id}`}>
                     <Card className="overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all bg-white rounded-xl group">
                       <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
                         {v.photos?.[0] ? (

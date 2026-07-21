@@ -117,7 +117,7 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
           )}
         </div>
         <div className="p-4">
-          <Link href={`/vehicles/${vehicle.id}`}>
+          <Link href={`/inventory/${vehicle.id}`}>
             <h4 className="font-semibold text-sm group-hover:text-primary transition-colors line-clamp-1">{vehicle.title}</h4>
           </Link>
           <div className="flex items-center gap-2 mt-1.5">
@@ -133,7 +133,7 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
             {insp?.warrantyStatus && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{insp.warrantyStatus}</Badge>}
             {km < 30000 && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Low KM</Badge>}
           </div>
-          <Link href={`/vehicles/${vehicle.id}`}>
+          <Link href={`/inventory/${vehicle.id}`}>
             <Button className="w-full mt-3" size="sm">View Details</Button>
           </Link>
         </div>
@@ -171,7 +171,7 @@ function QuickViewDialog({ vehicle, open, onClose }: { vehicle: VehicleListing |
               {sl?.variant && <div className="flex items-center gap-2 text-gray-600">{sl.variant}</div>}
             </div>
             <div className="flex gap-2 pt-2">
-              <Button asChild className="flex-1"><Link href={`/vehicles/${vehicle.id}`}>View Details</Link></Button>
+              <Button asChild className="flex-1"><Link href={`/inventory/${vehicle.id}`}>View Details</Link></Button>
               <Button variant="outline" className="flex-1" onClick={onClose}>Close</Button>
             </div>
           </div>
