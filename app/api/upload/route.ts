@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
 
     const ext = file.name.split(".").pop() || "jpg"
     const filename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
-    const uploadDir = join(process.cwd(), "public", "uploads")
+    const uploadDir = process.env.UPLOAD_DIR || join(process.cwd(), "public", "uploads")
 
     await mkdir(uploadDir, { recursive: true })
     await writeFile(join(uploadDir, filename), buffer)
 
     return NextResponse.json({
       success: true,
-      url: `/uploads/${filename}`,
+      url: `/api/uploads/${filename}`,
     })
   } catch (error) {
     console.error("[upload] error:", error)
