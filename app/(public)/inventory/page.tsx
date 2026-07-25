@@ -43,6 +43,19 @@ function FilterSection({ label, open, onToggle, children }: { label: string; ope
   </div>)
 }
 
+function parsePhotos(photos?: string | string[] | any): string[] {
+  if (!photos) return []
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    try {
+      return JSON.parse(photos)
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 function VehicleCardSkeleton() {
   return (<Card className="overflow-hidden"><Skeleton className="aspect-[4/3] rounded-none" />
     <div className="p-4 space-y-3"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-6 w-1/3" />
@@ -58,13 +71,14 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
   const battery = insp?.batteryHealth; const km = insp?.kmDriven ?? sl?.kmDriven ?? 0
   const year = sl?.year ?? new Date(vehicle.createdAt).getFullYear()
   const isAvail = vehicle.status === "AVAILABLE"
+  const parsedPhotos = parsePhotos(vehicle.photos)
 
   return (
     <motion.div whileHover={{ y: -6 }} className="group relative">
       <Card className="overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300">
         <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
-          {vehicle.photos?.[0] ? (
-            <img src={vehicle.photos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+          {parsedPhotos?.[0] ? (
+            <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/5 to-primary/10">
               <Car className="w-16 h-16 text-primary/30" />
@@ -147,6 +161,7 @@ function QuickViewDialog({ vehicle, open, onClose }: { vehicle: VehicleListing |
   const insp = vehicle.inspection; const sl = insp?.sellerLead
   const battery = insp?.batteryHealth; const km = insp?.kmDriven ?? sl?.kmDriven ?? 0
   const year = sl?.year ?? new Date(vehicle.createdAt).getFullYear()
+  const parsedPhotos = parsePhotos(vehicle.photos)
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
@@ -154,8 +169,8 @@ function QuickViewDialog({ vehicle, open, onClose }: { vehicle: VehicleListing |
         <DialogHeader><DialogTitle>{vehicle.title}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-            {vehicle.photos?.[0] ? (
-              <img src={vehicle.photos[0]} alt={vehicle.title} className="w-full h-full object-cover" />
+            {parsedPhotos?.[0] ? (
+              <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover" />
             ) : (
               <div className="flex items-center justify-center h-full"><Car className="w-12 h-12 text-gray-300" /></div>
             )}
@@ -398,11 +413,14 @@ export default function InventoryPage() {
               <div className="flex items-center gap-3">
                 <span className="text-sm font-medium">{compareStore.ids.length} vehicle{compareStore.ids.length > 1 ? "s" : ""} selected</span>
                 <div className="flex -space-x-2">
-                  {vehicles.filter((v) => compareStore.has(v.id)).slice(0, 4).map((v) => (
-                    <div key={v.id} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden shrink-0">
-                      {v.photos?.[0] ? <img src={v.photos[0]} alt="" className="w-full h-full object-cover" /> : <Car className="w-4 h-4 mx-auto mt-2 text-gray-400" />}
-                    </div>
-                  ))}
+                  {vehicles.filter((v) => compareStore.has(v.id)).slice(0, 4).map((v) => {
+                    const parsed = parsePhotos(v.photos)
+                    return (
+                      <div key={v.id} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden shrink-0">
+                        {parsed?.[0] ? <img src={parsed[0]} alt="" className="w-full h-full object-cover" /> : <Car className="w-4 h-4 mx-auto mt-2 text-gray-400" />}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
               <div className="flex items-center gap-2">

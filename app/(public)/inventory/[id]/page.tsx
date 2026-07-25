@@ -26,8 +26,12 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
 
   const parsedPhotos = useMemo(() => {
     if (!vehicle?.photos) return []
+    if (Array.isArray(vehicle.photos)) return vehicle.photos
     try {
-      return JSON.parse(vehicle.photos)
+      if (typeof vehicle.photos === 'string') {
+        return JSON.parse(vehicle.photos)
+      }
+      return []
     } catch {
       return []
     }
