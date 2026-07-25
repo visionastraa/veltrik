@@ -48,8 +48,16 @@ function parsePhotos(photos?: string | string[] | any): string[] {
   if (Array.isArray(photos)) return photos
   if (typeof photos === 'string') {
     try {
-      return JSON.parse(photos)
+      let parsed = JSON.parse(photos)
+      // Handle double stringification
+      while (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      if (Array.isArray(parsed)) return parsed
+      return []
     } catch {
+      // If it fails to parse but it's a comma-separated string, we could split it, 
+      // but assuming it's a JSON array format.
       return []
     }
   }

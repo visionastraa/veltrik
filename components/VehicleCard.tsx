@@ -45,7 +45,13 @@ export function VehicleCard({
     parsedPhotos = photos
   } else if (typeof photos === "string") {
     try {
-      parsedPhotos = JSON.parse(photos)
+      let parsed = JSON.parse(photos)
+      while (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      if (Array.isArray(parsed)) {
+        parsedPhotos = parsed
+      }
     } catch {
       parsedPhotos = []
     }

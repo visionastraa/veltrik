@@ -29,7 +29,12 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     if (Array.isArray(vehicle.photos)) return vehicle.photos
     try {
       if (typeof vehicle.photos === 'string') {
-        return JSON.parse(vehicle.photos)
+        let parsed = JSON.parse(vehicle.photos)
+        while (typeof parsed === 'string') {
+          parsed = JSON.parse(parsed)
+        }
+        if (Array.isArray(parsed)) return parsed
+        return []
       }
       return []
     } catch {

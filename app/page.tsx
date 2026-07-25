@@ -34,6 +34,25 @@ const STEPS = [
   { icon: Star, title: "Buy with Confidence", desc: "Transparent pricing, battery health reports, and warranty covered" },
 ]
 
+function parsePhotos(photos?: string | string[] | any): string[] {
+  if (!photos) return []
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    try {
+      let parsed = JSON.parse(photos)
+      // Handle double stringification
+      while (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      if (Array.isArray(parsed)) return parsed
+      return []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 export default function Home() {
   const [search, setSearch] = useState("")
   const { data: vehiclesData } = useVehicles({ status: "AVAILABLE", limit: 6, sortBy: "newest" })
@@ -158,13 +177,15 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vehicles.map((v, i) => (
+              {vehicles.map((v, i) => {
+                const parsedPhotos = parsePhotos(v.photos)
+                return (
                 <motion.div key={v.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
                   <Link href={`/inventory/${v.id}`}>
                     <Card className="overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all bg-white rounded-xl group">
                       <div className="aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 relative overflow-hidden">
-                        {v.photos?.[0] ? (
-                          <img src={v.photos[0]} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        {parsedPhotos?.[0] ? (
+                          <img src={parsedPhotos[0]} alt={v.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                         ) : (
                           <div className="absolute inset-0 flex items-center justify-center"><Car className="w-16 h-16 text-gray-300" /></div>
                         )}
@@ -190,7 +211,8 @@ export default function Home() {
                     </Card>
                   </Link>
                 </motion.div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
