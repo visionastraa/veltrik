@@ -22,6 +22,17 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
   const wishlistIds = useMemo(() => new Set(wishlistData?.data?.map(v => v.id) ?? []), [wishlistData])
   const [messaging, setMessaging] = useState(false)
 
+  const vehicle = data?.data
+
+  const parsedPhotos = useMemo(() => {
+    if (!vehicle?.photos) return []
+    try {
+      return JSON.parse(vehicle.photos)
+    } catch {
+      return []
+    }
+  }, [vehicle?.photos])
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -38,7 +49,6 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  const vehicle = data?.data
   if (!vehicle) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 text-center py-20">
@@ -108,8 +118,8 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
         {/* Images */}
         <div>
           <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl overflow-hidden">
-            {vehicle.photos?.[0] ? (
-              <img src={vehicle.photos[0]} alt={vehicle.title} className="w-full h-full object-cover" />
+            {parsedPhotos?.[0] ? (
+              <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center"><span className="text-6xl">EV</span></div>
             )}
@@ -122,9 +132,9 @@ export default function VehicleDetailPage({ params }: { params: Promise<{ id: st
               {toggleWishlist.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Heart className={cn("w-5 h-5", isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600")} />}
             </button>
           </div>
-          {vehicle.photos && vehicle.photos.length > 1 && (
+          {parsedPhotos && parsedPhotos.length > 1 && (
             <div className="grid grid-cols-4 gap-2 mt-2">
-              {vehicle.photos.slice(0, 4).map((p, i) => (
+              {parsedPhotos.slice(0, 4).map((p: string, i: number) => (
                 <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   <img src={p} alt="" className="w-full h-full object-cover" />
                 </div>

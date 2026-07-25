@@ -13,7 +13,7 @@ export interface VehicleCardProps {
   id: string
   title: string
   price: number
-  photos?: string[]
+  photos?: string | string[]
   status?: "AVAILABLE" | "RESERVED" | "SOLD"
   batteryHealth?: number
   kmDriven?: number
@@ -30,7 +30,7 @@ export function VehicleCard({
   id,
   title,
   price,
-  photos = [],
+  photos,
   status = "AVAILABLE",
   batteryHealth,
   kmDriven,
@@ -40,7 +40,18 @@ export function VehicleCard({
   onWishlistToggle,
   className,
 }: VehicleCardProps) {
-  const photoUrl = photos[0] || "/api/placeholder/800/600?text=EV"
+  let parsedPhotos: string[] = []
+  if (Array.isArray(photos)) {
+    parsedPhotos = photos
+  } else if (typeof photos === "string") {
+    try {
+      parsedPhotos = JSON.parse(photos)
+    } catch {
+      parsedPhotos = []
+    }
+  }
+
+  const photoUrl = parsedPhotos[0] || "/api/placeholder/800/600?text=EV"
   const formattedPrice = `₹${(price / 100000).toFixed(2)} Lakh`
 
   return (
