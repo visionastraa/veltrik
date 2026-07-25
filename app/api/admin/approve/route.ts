@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         where: { id: inspectionId },
         data: {
           finalOffer: parseFloat(finalOffer),
-          approvedBy: adminId,
+          approvedById: adminId,
           approvedAt: new Date(),
         }
       });

@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InspectionActions } from "@/components/admin/InspectionActions";
 
-export default async function InspectionReviewPage({ params }: { params: { id: string } }) {
+export default async function InspectionReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
 
@@ -14,8 +14,10 @@ export default async function InspectionReviewPage({ params }: { params: { id: s
     redirect("/login");
   }
 
+  const resolvedParams = await params;
+
   const inspection = await prisma.inspection.findUnique({
-    where: { id: params.id },
+    where: { id: resolvedParams.id },
     include: {
       sellerLead: { include: { user: true } },
       inspector: true,

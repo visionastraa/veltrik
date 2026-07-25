@@ -13,7 +13,10 @@ export default async function InspectionsPage() {
       type: "SELLER_INSPECTION",
       sellerLead: {
         status: {
-          in: ["SCHEDULED", "SUBMITTED"],
+          in: ["SCHEDULED", "SUBMITTED", "INSPECTION_SCHEDULED"],
+        },
+        inspection: {
+          inspectorId: session.user.id,
         },
       },
     },

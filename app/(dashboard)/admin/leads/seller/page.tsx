@@ -16,6 +16,8 @@ import {
 import { format } from "date-fns";
 import { Eye } from "lucide-react";
 
+import { AssignInspectorDialog } from "@/components/admin/AssignInspectorDialog";
+
 export default async function SellerLeadsPage() {
   const session = await getServerSession(authOptions);
   const role = (session?.user as any)?.role;
@@ -30,6 +32,11 @@ export default async function SellerLeadsPage() {
       user: { select: { name: true, phone: true } },
       inspection: { select: { id: true } }
     },
+  });
+
+  const inspectors = await prisma.user.findMany({
+    where: { role: "INSPECTOR" },
+    select: { id: true, name: true, email: true }
   });
 
   return (
@@ -76,7 +83,7 @@ export default async function SellerLeadsPage() {
                       </Button>
                     </Link>
                   ) : (
-                    <span className="text-xs text-gray-500 italic">Waiting for Inspection</span>
+                    <AssignInspectorDialog leadId={lead.id} inspectors={inspectors} />
                   )}
                 </TableCell>
               </TableRow>

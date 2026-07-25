@@ -110,19 +110,16 @@ export async function GET() {
       },
     });
 
-    // Filter out bookings that have inspections assigned to other inspectors
+    // Only include bookings that are explicitly assigned to this inspector
     const myBookings = bookings.filter((b) => {
       const inspection = b.sellerLead?.inspection;
-      if (inspection && inspection.inspectorId !== inspectorId) {
-        return false;
-      }
-      return true;
+      return inspection?.inspectorId === inspectorId;
     });
 
     // Calculate today's stats
     const todaysInspections = myBookings.length;
     const completedToday = myBookings.filter(
-      (b) => b.sellerLead?.status === "INSPECTED" || b.sellerLead?.inspection
+      (b) => ["INSPECTED", "ACQUIRED", "REJECTED"].includes(b.sellerLead?.status || "")
     ).length;
     const pending = todaysInspections - completedToday;
 
@@ -142,11 +139,11 @@ export async function GET() {
       const seller = lead?.user || b.user;
       
       let status: "completed" | "in-progress" | "not-started" | "missed" = "not-started";
-      if (lead?.status === "INSPECTED" || lead?.inspection) {
+      if (lead?.status === "INSPECTED" || lead?.status === "ACQUIRED" || lead?.status === "REJECTED") {
         status = "completed";
       } else if (new Date(b.scheduledAt).getTime() < Date.now()) {
         status = "missed";
-      } else if (lead?.status === "SCHEDULED") {
+      } else if (lead?.status === "SCHEDULED" || lead?.status === "INSPECTION_SCHEDULED") {
         status = "not-started";
       }
 

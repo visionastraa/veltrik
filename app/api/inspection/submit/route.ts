@@ -15,34 +15,40 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = inspectionSubmitSchema.parse(body)
 
-    const inspection = await prisma.inspection.create({
-      data: {
+    const inspectionData = {
+      ageYears: validated.ageYears,
+      ageMonths: validated.ageMonths,
+      kmDriven: validated.kmDriven,
+      bodyDamage: validated.bodyDamage,
+      bodyDamagePhoto: validated.bodyDamagePhoto,
+      forkDamage: validated.forkDamage,
+      accidentHistory: validated.accidentHistory,
+      warrantyStatus: validated.warrantyStatus,
+      warrantyType: validated.warrantyType,
+      warrantyExpiry: validated.warrantyExpiry ? new Date(validated.warrantyExpiry) : undefined,
+      partsReplaced: validated.partsReplaced,
+      replacedParts: validated.replacedParts,
+      adminComments: validated.adminComments,
+      batteryCharge: validated.batteryCharge,
+      batteryHealth: validated.batteryHealth,
+      batteryVoltage: validated.batteryVoltage,
+      physicalDamage: validated.physicalDamage,
+      brakeSystem: validated.brakeSystem,
+      brakePads: validated.brakePads,
+      wheelAlignment: validated.wheelAlignment,
+      testDriveRating: validated.testDriveRating,
+      testDriveNotes: validated.testDriveNotes,
+      techComments: validated.techComments,
+      finalOffer: validated.finalOffer,
+    };
+
+    const inspection = await prisma.inspection.upsert({
+      where: { sellerLeadId: validated.sellerLeadId },
+      update: inspectionData,
+      create: {
         sellerLeadId: validated.sellerLeadId,
         inspectorId: session.user.id,
-        ageYears: validated.ageYears,
-        ageMonths: validated.ageMonths,
-        kmDriven: validated.kmDriven,
-        bodyDamage: validated.bodyDamage,
-        bodyDamagePhoto: validated.bodyDamagePhoto,
-        forkDamage: validated.forkDamage,
-        accidentHistory: validated.accidentHistory,
-        warrantyStatus: validated.warrantyStatus,
-        warrantyType: validated.warrantyType,
-        warrantyExpiry: validated.warrantyExpiry ? new Date(validated.warrantyExpiry) : undefined,
-        partsReplaced: validated.partsReplaced,
-        replacedParts: validated.replacedParts,
-        adminComments: validated.adminComments,
-        batteryCharge: validated.batteryCharge,
-        batteryHealth: validated.batteryHealth,
-        batteryVoltage: validated.batteryVoltage,
-        physicalDamage: validated.physicalDamage,
-        brakeSystem: validated.brakeSystem,
-        brakePads: validated.brakePads,
-        wheelAlignment: validated.wheelAlignment,
-        testDriveRating: validated.testDriveRating,
-        testDriveNotes: validated.testDriveNotes,
-        techComments: validated.techComments,
-        finalOffer: validated.finalOffer,
+        ...inspectionData,
       },
     })
 
