@@ -88,24 +88,30 @@ export function UnifiedNavbar({ mode = 'hybrid', onModeChange }: UnifiedNavbarPr
 
         <div className="hidden md:flex items-center gap-1 p-1 rounded-full bg-gray-100 border border-gray-200">
           {([
-            { id: 'buy', label: 'Buy', icon: ShoppingBag },
-            { id: 'sell', label: 'Sell', icon: TrendingUp },
-            { id: 'hybrid', label: 'Explore', icon: Sparkles }
-          ] as const).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onModeChange?.(item.id)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
-                mode === item.id
-                  ? "bg-white text-primary shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              )}
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </button>
-          ))}
+            { id: 'buy', label: 'Buy', icon: ShoppingBag, href: '/inventory' },
+            { id: 'sell', label: 'Sell', icon: TrendingUp, href: '/sell' },
+            { id: 'hybrid', label: 'Explore', icon: Sparkles, href: '/' }
+          ] as const).map((item) => {
+            // Determine if active by checking pathname instead of just mode prop
+            const isItemActive = pathname === item.href || (item.id === 'buy' && pathname.startsWith('/inventory')) || (item.id === 'sell' && pathname.startsWith('/sell'))
+            
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={() => onModeChange?.(item.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200",
+                  isItemActive
+                    ? "bg-white text-primary shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </Link>
+            )
+          })}
         </div>
 
         <div className="hidden lg:flex items-center gap-1 text-sm">
