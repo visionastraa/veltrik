@@ -59,6 +59,9 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     case "RESERVED":
       bgColor = "bg-yellow-500 hover:bg-yellow-600";
       break;
+    case "UNPUBLISHED":
+      bgColor = "bg-gray-400 hover:bg-gray-500";
+      break;
     case "SOLD":
       variant = "secondary";
       textColor = "text-gray-500";

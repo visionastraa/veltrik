@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 export interface SellFormData {
+  id?: string
   make: string
   model: string
   variant: string

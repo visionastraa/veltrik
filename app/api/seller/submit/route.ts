@@ -14,8 +14,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = sellerLeadSchema.parse(body)
 
+    // Section 1: Check for duplicate vehicleNumber
+    const existing = await prisma.sellerLead.findFirst({
+      where: { vehicleNumber: validated.vehicleNumber }
+    })
+    
+    if (existing) {
+      return NextResponse.json({ success: false, error: "A vehicle with this registration number has already been submitted." }, { status: 409 })
+    }
+
     const lead = await prisma.sellerLead.create({
       data: {
+        id: body.id, // Use client-generated CUID if provided
         userId: session.user.id,
         make: validated.make,
         model: validated.model,

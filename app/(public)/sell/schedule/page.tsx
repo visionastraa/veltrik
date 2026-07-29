@@ -42,6 +42,10 @@ export default function SellStep2Page() {
       for (const file of files) {
         const payload = new FormData()
         payload.append("file", file)
+        payload.append("folder", "seller-leads")
+        if (formData.id) {
+          payload.append("entityId", formData.id)
+        }
         const res = await fetch("/api/upload", { method: "POST", body: payload })
         const data = await res.json()
         if (data.success) {

@@ -11,6 +11,7 @@ import {
   Settings, Car, Sun, Moon, Shield, ClipboardCheck, Home,
   Package, Calendar
 } from "lucide-react"
+import { NotificationBell } from "@/components/NotificationBell"
 import { DashboardSwitcher } from "./DashboardSwitcher"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -156,12 +157,9 @@ export function UnifiedNavbar({ mode = 'hybrid', onModeChange }: UnifiedNavbarPr
             </span>
           </Link>
 
-          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors relative hidden sm:flex">
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] rounded-full flex items-center justify-center">
-              5
-            </span>
-          </button>
+          <div className="hidden sm:flex">
+            <NotificationBell />
+          </div>
 
           <button
             onClick={() => setDarkMode(!darkMode)}

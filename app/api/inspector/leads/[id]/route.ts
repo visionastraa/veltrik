@@ -11,8 +11,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 })
     }
 
-    const lead = await prisma.sellerLead.findUnique({
-      where: { id },
+    const lead = await prisma.sellerLead.findFirst({
+      where: { 
+        id,
+        inspection: { inspectorId: session.user.id }
+      },
       include: {
         user: { select: { name: true, email: true } },
         inspection: {

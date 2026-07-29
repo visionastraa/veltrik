@@ -83,9 +83,9 @@ function parsePhotos(photos?: string | string[] | any): string[] {
         parsed = JSON.parse(parsed)
       }
       if (Array.isArray(parsed)) return parsed
-      return []
+      return [photos]
     } catch {
-      return []
+      return [photos]
     }
   }
   return []

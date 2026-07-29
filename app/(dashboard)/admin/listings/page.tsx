@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { ListingEditor } from "@/components/admin/ListingEditor";
+import { ListingPhotoEditor } from "@/components/admin/ListingPhotoEditor";
 import {
   Table,
   TableBody,
@@ -55,7 +56,7 @@ export default async function AdminListingsPage() {
               return (
                 <TableRow key={listing.id}>
                   <TableCell>
-                    <div className="relative w-16 h-12 rounded overflow-hidden bg-gray-100">
+                    <div className="relative w-16 h-12 rounded overflow-hidden bg-gray-100 mb-2">
                       <Image 
                         src={thumbnail} 
                         alt={listing.title}
@@ -64,6 +65,7 @@ export default async function AdminListingsPage() {
                         unoptimized
                       />
                     </div>
+                    <ListingPhotoEditor listingId={listing.id} initialPhotos={photos} />
                   </TableCell>
                   <TableCell>
                     <div className="font-medium">{listing.title}</div>

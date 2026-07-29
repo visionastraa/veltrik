@@ -1,0 +1,14 @@
+ALTER TABLE `inspections` ADD COLUMN `inspectionComplete` BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE `notification_logs` (
+  `id` VARCHAR(191) NOT NULL,
+  `userId` VARCHAR(191) NOT NULL,
+  `type` VARCHAR(191) NOT NULL,
+  `channel` VARCHAR(191) NOT NULL DEFAULT 'IN_APP',
+  `status` VARCHAR(191) NOT NULL DEFAULT 'SENT',
+  `payload` TEXT NOT NULL,
+  `isRead` BOOLEAN NOT NULL DEFAULT false,
+  `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `notification_logs_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

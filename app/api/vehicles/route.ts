@@ -13,10 +13,9 @@ export async function GET(request: NextRequest) {
     const minBatteryHealth = searchParams.get("minBatteryHealth")
     const year = searchParams.get("year")
     const sortBy = searchParams.get("sortBy") || "newest"
-    const status = searchParams.get("status") || "AVAILABLE"
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { status }
+    // Strictly enforce AVAILABLE status for public listings
+    const where: any = { status: "AVAILABLE" }
 
     if (search) {
       where.OR = [

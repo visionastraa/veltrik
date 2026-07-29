@@ -26,6 +26,10 @@ interface Inspector {
   id: string;
   name: string | null;
   email: string | null;
+  phone?: string | null;
+  _count?: {
+    inspections: number;
+  };
 }
 
 interface AssignInspectorDialogProps {
@@ -101,7 +105,15 @@ export function AssignInspectorDialog({ leadId, inspectors }: AssignInspectorDia
               <SelectContent>
                 {inspectors.map((inspector) => (
                   <SelectItem key={inspector.id} value={inspector.id}>
-                    {inspector.name || "Unnamed"} ({inspector.email})
+                    <div className="flex flex-col text-left">
+                      <span className="font-medium">{inspector.name || "Unnamed"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {inspector.phone ? `${inspector.phone} • ` : ''}{inspector.email}
+                      </span>
+                      <span className="text-xs text-primary font-medium mt-0.5">
+                        {inspector._count?.inspections || 0} active inspections
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>

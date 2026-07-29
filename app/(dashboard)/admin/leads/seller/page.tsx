@@ -36,7 +36,19 @@ export default async function SellerLeadsPage() {
 
   const inspectors = await prisma.user.findMany({
     where: { role: "INSPECTOR" },
-    select: { id: true, name: true, email: true }
+    select: { 
+      id: true, 
+      name: true, 
+      email: true,
+      phone: true,
+      _count: {
+        select: {
+          inspections: {
+            where: { inspectionComplete: false }
+          }
+        }
+      }
+    }
   });
 
   return (

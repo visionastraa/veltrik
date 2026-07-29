@@ -4,8 +4,8 @@ import { join } from "path"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"]
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"]
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,32 +16,41 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get("file") as File
+    const folder = (formData.get("folder") as string) || "misc"
+    const entityId = (formData.get("entityId") as string) || session.user.id
 
     if (!file) {
       return NextResponse.json({ success: false, error: "No file provided" }, { status: 400 })
     }
 
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return NextResponse.json({ success: false, error: `File type ${file.type} not allowed` }, { status: 400 })
-    }
-
     if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json({ success: false, error: "File exceeds 10MB limit" }, { status: 400 })
+      return NextResponse.json({ success: false, error: "File exceeds 5MB limit" }, { status: 400 })
     }
 
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    const ext = file.name.split(".").pop() || "jpg"
-    const filename = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
-    const uploadDir = process.env.UPLOAD_DIR || join(process.cwd(), "public", "uploads")
+    // Magic Bytes Validation
+    const { fileTypeFromBuffer } = await import('file-type')
+    const type = await fileTypeFromBuffer(buffer)
+    
+    if (!type || !ALLOWED_MIME_TYPES.includes(type.mime)) {
+      return NextResponse.json({ success: false, error: `Invalid file type. Allowed: JPEG, PNG, WEBP.` }, { status: 400 })
+    }
 
-    await mkdir(uploadDir, { recursive: true })
-    await writeFile(join(uploadDir, filename), buffer)
+    const ext = type.ext
+    const filename = `${crypto.randomUUID()}.${ext}`
+    
+    // Base path logic
+    const baseUploadDir = process.env.UPLOAD_DIR || join(process.cwd(), "public", "uploads")
+    const entityDir = join(baseUploadDir, folder, entityId)
+
+    await mkdir(entityDir, { recursive: true })
+    await writeFile(join(entityDir, filename), buffer)
 
     return NextResponse.json({
       success: true,
-      url: `/api/uploads/${filename}`,
+      url: `/uploads/${folder}/${entityId}/${filename}`,
     })
   } catch (error) {
     console.error("[upload] error:", error)

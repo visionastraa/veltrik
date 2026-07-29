@@ -28,6 +28,7 @@ model User {
   approvedInspections Inspection[] @relation("ApprovedInspections")
   payments    Payment[]
   activityLogs ActivityLog[]
+  notificationLogs NotificationLog[]
   conversationsAsBuyer Conversation[] @relation("BuyerConversations")
   conversationsAsSeller Conversation[] @relation("SellerConversations")
   messages     Message[]
@@ -103,6 +104,7 @@ model Inspection {
   approvedAt         DateTime?
   
   // Metadata
+  inspectionComplete Boolean  @default(false)
   inspectorId        String
   inspector          User     @relation("InspectorInspections", fields: [inspectorId], references: [id])
   createdAt          DateTime @default(now())
@@ -112,6 +114,20 @@ model Inspection {
   listing            Listing?
   
   @@map("inspections")
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  channel   String   @default("IN_APP")
+  status    String   @default("SENT")
+  payload   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("notification_logs")
 }
 
 model Listing {

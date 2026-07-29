@@ -72,6 +72,7 @@ export function ListingEditor({ listing }: { listing: Listing }) {
           <SelectItem value="AVAILABLE">AVAILABLE</SelectItem>
           <SelectItem value="RESERVED">RESERVED</SelectItem>
           <SelectItem value="SOLD">SOLD</SelectItem>
+          <SelectItem value="UNPUBLISHED">UNPUBLISHED</SelectItem>
         </SelectContent>
       </Select>
       <div className="flex items-center ml-auto gap-1">

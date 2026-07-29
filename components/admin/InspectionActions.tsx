@@ -35,7 +35,6 @@ export function InspectionActions({ inspectionId, disabled }: { inspectionId: st
   };
 
   const handleReject = async () => {
-    if (!confirm("Are you sure you want to reject this vehicle?")) return;
     setLoading(true);
     try {
       const res = await fetch("/api/admin/reject", {
@@ -53,12 +52,15 @@ export function InspectionActions({ inspectionId, disabled }: { inspectionId: st
     }
   };
 
+  const [confirmApprove, setConfirmApprove] = useState(false);
+  const [confirmReject, setConfirmReject] = useState(false);
+
   if (disabled) {
     return <div className="text-sm text-gray-500 italic">This inspection has already been processed.</div>;
   }
 
   return (
-    <div className="space-y-4 bg-gray-50 p-6 rounded-lg border">
+    <div className="space-y-4 bg-gray-50 p-6 rounded-lg border relative">
       <h3 className="font-semibold text-lg">Appraisal Decision</h3>
       <div className="flex items-center gap-4">
         <div className="flex-1 max-w-xs">
@@ -73,13 +75,39 @@ export function InspectionActions({ inspectionId, disabled }: { inspectionId: st
         </div>
       </div>
       <div className="flex items-center gap-3 pt-2">
-        <Button onClick={handleApprove} disabled={loading} className="bg-green-600 hover:bg-green-700">
+        <Button onClick={() => setConfirmApprove(true)} disabled={loading} className="bg-green-600 hover:bg-green-700">
           <Check className="w-4 h-4 mr-1" /> Approve & List
         </Button>
-        <Button onClick={handleReject} disabled={loading} variant="destructive">
+        <Button onClick={() => setConfirmReject(true)} disabled={loading} variant="destructive">
           <X className="w-4 h-4 mr-1" /> Reject Vehicle
         </Button>
       </div>
+
+      {confirmApprove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h4 className="font-bold text-lg mb-2">Confirm Approval</h4>
+            <p className="text-sm text-gray-600 mb-6">Are you sure you want to approve this inspection with a final offer of ₹{offer || 0}? This will create a public listing.</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setConfirmApprove(false)} disabled={loading}>Cancel</Button>
+              <Button onClick={handleApprove} disabled={loading} className="bg-green-600 hover:bg-green-700">Confirm Approve</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmReject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h4 className="font-bold text-lg mb-2">Confirm Rejection</h4>
+            <p className="text-sm text-gray-600 mb-6">Are you sure you want to reject this vehicle? The seller will be notified.</p>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setConfirmReject(false)} disabled={loading}>Cancel</Button>
+              <Button onClick={handleReject} disabled={loading} variant="destructive">Confirm Reject</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

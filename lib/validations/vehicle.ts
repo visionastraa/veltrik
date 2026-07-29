@@ -41,6 +41,7 @@ export const inspectionSchema = z.object({
 })
 
 export const sellerLeadSchema = z.object({
+  id: z.string().optional(),
   make: z.string().min(1),
   model: z.string().min(1),
   variant: z.string().min(1),

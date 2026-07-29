@@ -24,6 +24,7 @@ export const authOptions: NextAuthOptions = {
           where: { email: credentials.email },
         })
         if (!user || !user.password) return null
+        if (user.role === "DEACTIVATED") throw new Error("Account deactivated")
         const isValid = await bcrypt.compare(credentials.password, user.password)
         if (!isValid) return null
         return { id: user.id, email: user.email, name: user.name, role: user.role }
@@ -35,6 +36,19 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as { role?: string }).role
         token.id = user.id
+      }
+      // Re-validate role from DB if a token already exists to sign out deactivated users dynamically
+      if (token?.email) {
+        const dbUser = await prisma.user.findUnique({
+          where: { email: token.email },
+          select: { role: true }
+        });
+        if (dbUser && dbUser.role === "DEACTIVATED") {
+          throw new Error("Account deactivated")
+        }
+        if (dbUser) {
+           token.role = dbUser.role
+        }
       }
       return token
     },

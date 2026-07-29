@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const adminNavItems = [
   { name: "Overview", href: "/admin", icon: LayoutDashboard },
   { name: "Seller Leads", href: "/admin/leads/seller", icon: CarFront },
+  { name: "Inspectors", href: "/admin/inspectors", icon: UserCheck },
   { name: "Buyer CRM", href: "/admin/leads/buyer", icon: Users },
   { name: "Inspections", href: "/admin/inspections", icon: FileCheck },
   { name: "Listings", href: "/admin/listings", icon: UserCheck },

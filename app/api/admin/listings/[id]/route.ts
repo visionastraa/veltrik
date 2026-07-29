@@ -14,11 +14,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const body = await req.json();
-    const { price, status } = body;
+    const { price, status, photos } = body;
 
     const dataToUpdate: any = {};
     if (price !== undefined) dataToUpdate.price = parseFloat(price);
     if (status !== undefined) dataToUpdate.status = status;
+    if (photos !== undefined) dataToUpdate.photos = JSON.stringify(photos);
 
     const listing = await prisma.listing.update({
       where: { id },

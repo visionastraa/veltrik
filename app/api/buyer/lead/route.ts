@@ -14,14 +14,37 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = buyerLeadSchema.parse(body)
 
-    const lead = await prisma.buyerLead.create({
-      data: {
-        userId: session.user.id,
-        listingId: validated.listingId,
-        brandsInterested: JSON.stringify(validated.brandsInterested),
-        modelsInterested: JSON.stringify(validated.modelsInterested),
-      },
-    })
+    const existingLead = await prisma.buyerLead.findFirst({
+      where: { userId: session.user.id }
+    });
+
+    let lead;
+    if (existingLead) {
+      const existingBrands = JSON.parse(existingLead.brandsInterested || "[]");
+      const existingModels = JSON.parse(existingLead.modelsInterested || "[]");
+      
+      const newBrands = Array.from(new Set([...existingBrands, ...(validated.brandsInterested || [])]));
+      const newModels = Array.from(new Set([...existingModels, ...(validated.modelsInterested || [])]));
+
+      lead = await prisma.buyerLead.update({
+        where: { id: existingLead.id },
+        data: {
+          listingId: validated.listingId || existingLead.listingId,
+          brandsInterested: JSON.stringify(newBrands),
+          modelsInterested: JSON.stringify(newModels),
+          status: "LEAD_VISIT_SCHEDULED",
+        }
+      });
+    } else {
+      lead = await prisma.buyerLead.create({
+        data: {
+          userId: session.user.id,
+          listingId: validated.listingId,
+          brandsInterested: JSON.stringify(validated.brandsInterested || []),
+          modelsInterested: JSON.stringify(validated.modelsInterested || []),
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, lead })
   } catch (error) {

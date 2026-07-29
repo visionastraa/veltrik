@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Car, ArrowLeft, Home } from "lucide-react"
+import { createId } from "@paralleldrive/cuid2"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +18,12 @@ export default function SellStep1Page() {
   const router = useRouter()
   const { formData, setFormData } = useSellStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    if (!formData.id) {
+      setFormData({ id: createId() })
+    }
+  }, [formData.id, setFormData])
 
   const update = (field: string, value: any) => setFormData({ [field]: value })
 

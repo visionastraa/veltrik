@@ -15,6 +15,23 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = inspectionSubmitSchema.parse(body)
 
+    // 1. Fetch existing inspection and verify ownership + lock
+    const existingInspection = await prisma.inspection.findUnique({
+      where: { sellerLeadId: validated.sellerLeadId }
+    })
+
+    if (!existingInspection) {
+      return NextResponse.json({ success: false, error: "Inspection not found" }, { status: 404 })
+    }
+
+    if (existingInspection.inspectorId !== session.user.id) {
+      return NextResponse.json({ success: false, error: "Forbidden: Not assigned to you" }, { status: 403 })
+    }
+
+    if (existingInspection.inspectionComplete) {
+      return NextResponse.json({ success: false, error: "Inspection already submitted and locked." }, { status: 403 })
+    }
+
     const inspectionData = {
       ageYears: validated.ageYears,
       ageMonths: validated.ageMonths,
@@ -40,22 +57,40 @@ export async function POST(request: NextRequest) {
       testDriveNotes: validated.testDriveNotes,
       techComments: validated.techComments,
       finalOffer: validated.finalOffer,
+      inspectionComplete: true, // Mark as complete
     };
 
-    const inspection = await prisma.inspection.upsert({
-      where: { sellerLeadId: validated.sellerLeadId },
-      update: inspectionData,
-      create: {
-        sellerLeadId: validated.sellerLeadId,
-        inspectorId: session.user.id,
-        ...inspectionData,
-      },
+    // 2. Transaction
+    const inspection = await prisma.$transaction(async (tx) => {
+      const updated = await tx.inspection.update({
+        where: { sellerLeadId: validated.sellerLeadId },
+        data: inspectionData,
+      })
+
+      await tx.sellerLead.update({
+        where: { id: validated.sellerLeadId },
+        data: { status: "INSPECTED" },
+      })
+
+      return updated
     })
 
-    await prisma.sellerLead.update({
-      where: { id: validated.sellerLeadId },
-      data: { status: "INSPECTED" },
-    })
+    // 3. Admin Notification
+    const admins = await prisma.user.findMany({ where: { role: "ADMIN" } })
+    for (const admin of admins) {
+      await prisma.notificationLog.create({
+        data: {
+          userId: admin.id,
+          type: "INSPECTION_COMPLETED",
+          channel: "IN_APP",
+          status: "SENT",
+          payload: JSON.stringify({ 
+            title: "Inspection Completed", 
+            message: `An inspection report has been submitted and is ready for review.` 
+          })
+        }
+      })
+    }
 
     const sellerLead = await prisma.sellerLead.findUnique({
       where: { id: validated.sellerLeadId },

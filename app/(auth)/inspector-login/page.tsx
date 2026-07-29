@@ -39,7 +39,11 @@ export default function InspectorLoginPage() {
       });
 
       if (res?.error) {
-        setError("Invalid credentials");
+        if (res.error === "Account deactivated") {
+          setError("This inspector account has been deactivated.");
+        } else {
+          setError("Invalid credentials");
+        }
         setLoading(false);
         return;
       }

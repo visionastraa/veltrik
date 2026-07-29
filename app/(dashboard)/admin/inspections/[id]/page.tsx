@@ -47,11 +47,25 @@ export default async function InspectionReviewPage({ params }: { params: Promise
           <CardHeader>
             <CardTitle className="text-lg">Seller Details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Name:</span> <span>{inspection.sellerLead.user.name || "N/A"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Phone:</span> <span>{inspection.sellerLead.user.phone}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Expected Price:</span> <span>₹{inspection.sellerLead.expectedPrice || "N/A"}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Vehicle Number:</span> <span>{inspection.sellerLead.vehicleNumber}</span></div>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between items-center"><span className="text-muted-foreground">Name:</span> <span className="font-medium">{inspection.sellerLead.user.name || "N/A"}</span></div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Email:</span> 
+              {inspection.sellerLead.user.email ? (
+                <a href={`mailto:${inspection.sellerLead.user.email}`} className="text-primary hover:underline font-medium">{inspection.sellerLead.user.email}</a>
+              ) : <span>N/A</span>}
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Phone:</span> 
+              {inspection.sellerLead.user.phone ? (
+                <div className="flex items-center gap-3">
+                  <a href={`tel:${inspection.sellerLead.user.phone}`} className="text-primary hover:underline font-medium">{inspection.sellerLead.user.phone}</a>
+                  <a href={`https://wa.me/${inspection.sellerLead.user.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline font-medium text-xs bg-green-50 px-2 py-1 rounded">WhatsApp</a>
+                </div>
+              ) : <span>N/A</span>}
+            </div>
+            <div className="flex justify-between items-center"><span className="text-muted-foreground">Expected Price:</span> <span className="font-medium">₹{inspection.sellerLead.expectedPrice || "N/A"}</span></div>
+            <div className="flex justify-between items-center"><span className="text-muted-foreground">Vehicle Number:</span> <span className="font-medium">{inspection.sellerLead.vehicleNumber}</span></div>
           </CardContent>
         </Card>
 

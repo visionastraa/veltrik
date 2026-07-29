@@ -14,8 +14,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 403 })
     }
 
-    const inspection = await prisma.inspection.findUnique({
-      where: { id },
+    const inspection = await prisma.inspection.findFirst({
+      where: { id, inspectorId: session.user.id },
       include: {
         sellerLead: {
           select: {

@@ -34,6 +34,42 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Already approved" }, { status: 400 });
     }
 
+    // Process Photos
+    let combinedPhotos: string[] = [];
+    
+    // Helper to safely parse photos since they might be double stringified
+    const parsePhotos = (input: any): string[] => {
+      if (!input) return [];
+      let parsed = input;
+      while (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch {
+          break;
+        }
+      }
+      return Array.isArray(parsed) ? parsed : [];
+    };
+
+    const leadPhotos = parsePhotos(inspection.sellerLead.photos);
+    combinedPhotos.push(...leadPhotos);
+    
+    if (inspection.bodyDamagePhoto) {
+      const damagePhotos = parsePhotos(inspection.bodyDamagePhoto);
+      if (damagePhotos.length > 0) {
+        combinedPhotos.push(...damagePhotos);
+      } else {
+        combinedPhotos.push(inspection.bodyDamagePhoto); // fallback if it's a raw URL
+      }
+    }
+
+    // Deduplicate and remove empty
+    combinedPhotos = [...new Set(combinedPhotos.filter(p => p && p.trim() !== ''))];
+
+    if (combinedPhotos.length === 0) {
+      return NextResponse.json({ error: "Cannot create listing: No valid photos found after combining lead and inspection photos." }, { status: 400 });
+    }
+
     // Transaction to update inspection, lead, and create listing
     await prisma.$transaction(async (tx) => {
       // 1. Update Inspection with offer
@@ -59,11 +95,50 @@ export async function POST(req: Request) {
           title: `${inspection.sellerLead.make} ${inspection.sellerLead.model} ${inspection.sellerLead.year}`,
           price: parseFloat(finalOffer),
           status: "AVAILABLE",
-          photos: inspection.sellerLead.photos, // Carry over photos for the listing
+          photos: JSON.stringify(combinedPhotos), // Save correctly
           publishedAt: new Date(),
         }
       });
     });
+
+    // Notifications
+    try {
+      const { sendEmail } = await import('@/lib/email');
+      const sellerId = inspection.sellerLead.userId;
+      
+      const user = await prisma.user.findUnique({ where: { id: sellerId }});
+      if (user?.email) {
+        // Send Email to Seller
+        await sendEmail({
+          to: user.email,
+          subject: `Offer Received: ${inspection.sellerLead.make} ${inspection.sellerLead.model}`,
+          html: `
+            <h3>Great news! We have an offer for your vehicle.</h3>
+            <p><strong>Vehicle:</strong> ${inspection.sellerLead.make} ${inspection.sellerLead.model} (${inspection.sellerLead.year})</p>
+            <p><strong>Offer Price:</strong> ₹${parseFloat(finalOffer).toLocaleString()}</p>
+            <p>Please log in to your dashboard to review and accept the offer.</p>
+          `,
+          userId: sellerId,
+          type: "OFFER_MADE",
+        });
+      }
+
+      // Create IN_APP notification
+      await prisma.notificationLog.create({
+        data: {
+          userId: sellerId,
+          type: "OFFER_MADE",
+          channel: "IN_APP",
+          status: "SENT",
+          payload: JSON.stringify({ 
+            title: "Offer Received", 
+            message: `We have made a final offer of ₹${parseFloat(finalOffer).toLocaleString()} for your ${inspection.sellerLead.make}.` 
+          }),
+        },
+      });
+    } catch (notificationError) {
+      console.error("[Approve] Failed to send notifications:", notificationError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

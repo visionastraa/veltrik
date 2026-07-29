@@ -129,7 +129,7 @@ export default function InspectionFormClient({
         ...part2,
       };
 
-      const res = await fetch("/api/inspection/submit", {
+      const res = await fetch("/api/inspector/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(combinedData),
@@ -248,21 +248,52 @@ export default function InspectionFormClient({
               </div>
             </div>
 
-            {/* Launch Checklist Button */}
-            <Button
-              onClick={() => setIsInspecting(true)}
-              size="lg"
-              className="w-full flex items-center justify-center gap-2 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95 text-base py-6 shadow-md"
-            >
-              <Play className="size-5 fill-primary-foreground" />
-              <span>
-                {initialInspection 
-                  ? "View Completed Checklist" 
-                  : readOnly 
-                    ? "View Checklist" 
-                    : "Start Entering Inspection"}
-              </span>
-            </Button>
+            {/* Action Buttons */}
+            <div className="space-y-3">
+              <Button
+                onClick={() => setIsInspecting(true)}
+                size="lg"
+                className="w-full flex items-center justify-center gap-2 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95 text-base py-6 shadow-md"
+              >
+                <Play className="size-5 fill-primary-foreground" />
+                <span>
+                  {initialInspection 
+                    ? "View Completed Checklist" 
+                    : readOnly 
+                      ? "View Checklist" 
+                      : "Start Entering Inspection"}
+                </span>
+              </Button>
+
+              {!initialInspection && !readOnly && (
+                <Button
+                  onClick={async () => {
+                    const reason = prompt("Enter reason for rejection:");
+                    if (!reason) return;
+                    setIsSubmitting(true);
+                    try {
+                      const res = await fetch("/api/inspector/reject", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ sellerLeadId, reason }),
+                      });
+                      if (!res.ok) throw new Error("Failed to reject");
+                      router.push("/inspector");
+                      router.refresh();
+                    } catch (e: any) {
+                      setError(e.message);
+                      setIsSubmitting(false);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                  variant="destructive"
+                  size="lg"
+                  className="w-full bg-red-500 hover:bg-red-600 text-white"
+                >
+                  Reject On-Site
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
