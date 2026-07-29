@@ -73,6 +73,24 @@ const AISearchBar = ({ onSearch }: { onSearch: (q: string) => void }) => {
   )
 }
 
+function parsePhotos(photos?: string | string[] | any): string[] {
+  if (!photos) return []
+  if (Array.isArray(photos)) return photos
+  if (typeof photos === 'string') {
+    try {
+      let parsed = JSON.parse(photos)
+      while (typeof parsed === 'string') {
+        parsed = JSON.parse(parsed)
+      }
+      if (Array.isArray(parsed)) return parsed
+      return []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onToggleCompare }: { vehicle: VehicleListing; isWishlisted: boolean; onToggleWishlist: () => void; isCompared: boolean; onToggleCompare: () => void }) => {
   const [isHovered, setIsHovered] = useState(false)
   const insp = vehicle.inspection
@@ -80,14 +98,15 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
   const batteryHealth = insp?.batteryHealth
   const kmDriven = insp?.kmDriven ?? sl?.kmDriven ?? 0
   const year = sl?.year ?? new Date(vehicle.createdAt).getFullYear()
+  const parsedPhotos = parsePhotos(vehicle.photos)
 
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="group relative" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <Link href={`/inventory/${vehicle.id}`}>
         <Card className="overflow-hidden border-0 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white rounded-2xl">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
-            {vehicle.photos?.[0] ? (
-              <img src={vehicle.photos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+            {parsedPhotos?.[0] ? (
+              <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-700"><Car className="w-16 h-16 text-gray-300" /></div>
             )}
