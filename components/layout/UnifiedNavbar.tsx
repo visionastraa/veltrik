@@ -91,10 +91,10 @@ export function UnifiedNavbar({ mode = 'hybrid', onModeChange }: UnifiedNavbarPr
           {([
             { id: 'buy', label: 'Buy', icon: ShoppingBag, href: '/inventory' },
             { id: 'sell', label: 'Sell', icon: TrendingUp, href: '/sell' },
-            { id: 'hybrid', label: 'Explore', icon: Sparkles, href: '/' }
+            { id: 'hybrid', label: 'Explore', icon: Sparkles, href: '/user' }
           ] as const).map((item) => {
             // Determine if active by checking pathname instead of just mode prop
-            const isItemActive = pathname === item.href || (item.id === 'buy' && pathname.startsWith('/inventory')) || (item.id === 'sell' && pathname.startsWith('/sell'))
+            const isItemActive = pathname === item.href || (item.id === 'buy' && pathname.startsWith('/inventory')) || (item.id === 'sell' && pathname.startsWith('/sell')) || (item.id === 'hybrid' && pathname.startsWith('/user'))
             
             return (
               <Link

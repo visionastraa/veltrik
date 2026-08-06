@@ -87,39 +87,35 @@ export async function GET() {
       }
     }
 
-    // Fetch today's inspections (Bookings of type SELLER_INSPECTION scheduled for today)
-    const bookings = await prisma.booking.findMany({
+    // Fetch all inspections assigned to this inspector (inspection-driven,
+    // so assignments show up even before the seller schedules a booking)
+    const inspections = await prisma.inspection.findMany({
       where: {
-        type: "SELLER_INSPECTION",
-        scheduledAt: {
-          gte: todayStart,
-          lte: todayEnd,
-        },
+        inspectorId: inspectorId as string,
       },
       include: {
         sellerLead: {
           include: {
             user: true,
-            inspection: true,
+            bookings: {
+              where: { type: "SELLER_INSPECTION", status: { not: "cancelled" } },
+              orderBy: { scheduledAt: "asc" },
+              take: 1,
+            },
           },
         },
-        user: true, // The user who booked (seller)
       },
-      orderBy: {
-        scheduledAt: "asc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
-    // Only include bookings that are explicitly assigned to this inspector
-    const myBookings = bookings.filter((b) => {
-      const inspection = b.sellerLead?.inspection;
-      return inspection?.inspectorId === inspectorId;
+    // Today's stats based on inspections that have a booking scheduled today
+    const todayBooked = inspections.filter((insp) => {
+      const booking = insp.sellerLead?.bookings?.[0];
+      return booking && booking.scheduledAt >= todayStart && booking.scheduledAt <= todayEnd;
     });
-
-    // Calculate today's stats
-    const todaysInspections = myBookings.length;
-    const completedToday = myBookings.filter(
-      (b) => ["INSPECTED", "ACQUIRED", "REJECTED"].includes(b.sellerLead?.status || "")
+    const todaysInspections = todayBooked.length;
+    const completedToday = todayBooked.filter(
+      (insp) => ["INSPECTED", "ACQUIRED", "REJECTED"].includes(insp.sellerLead?.status || "")
     ).length;
     const pending = todaysInspections - completedToday;
 
@@ -133,35 +129,46 @@ export async function GET() {
       },
     });
 
-    // Format schedule list
-    const schedule = myBookings.map((b) => {
-      const lead = b.sellerLead;
-      const seller = lead?.user || b.user;
-      
-      let status: "completed" | "in-progress" | "not-started" | "missed" = "not-started";
-      if (lead?.status === "INSPECTED" || lead?.status === "ACQUIRED" || lead?.status === "REJECTED") {
-        status = "completed";
-      } else if (new Date(b.scheduledAt).getTime() < Date.now()) {
-        status = "missed";
-      } else if (lead?.status === "SCHEDULED" || lead?.status === "INSPECTION_SCHEDULED") {
-        status = "not-started";
-      }
+    // Format schedule list (all assigned inspections; booked ones show their slot time)
+    const schedule = inspections
+      .map((insp) => {
+        const lead = insp.sellerLead;
+        const seller = lead?.user;
+        const booking = lead?.bookings?.[0];
+        const scheduledAt = booking?.scheduledAt ?? null;
 
-      return {
-        id: b.id,
-        scheduledAt: b.scheduledAt,
-        time: b.scheduledAt.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        }),
-        sellerName: seller?.name || "Unknown Seller",
-        sellerPhone: seller?.phone || "",
-        vehicleName: lead ? `${lead.year} ${lead.make} ${lead.model}` : "Unknown Vehicle",
-        sellerLeadId: lead?.id || "",
-        status,
-      };
-    });
+        let status: "completed" | "in-progress" | "not-started" | "missed" = "not-started";
+        if (lead?.status === "INSPECTED" || lead?.status === "ACQUIRED" || lead?.status === "REJECTED") {
+          status = "completed";
+        } else if (scheduledAt && new Date(scheduledAt).getTime() < Date.now()) {
+          status = "missed";
+        } else if (lead?.status === "SCHEDULED" || lead?.status === "INSPECTION_SCHEDULED" || lead?.status === "SUBMITTED") {
+          status = "not-started";
+        }
+
+        return {
+          id: insp.id,
+          scheduledAt,
+          time: scheduledAt
+            ? scheduledAt.toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })
+            : "Pending",
+          sellerName: seller?.name || "Unknown Seller",
+          sellerPhone: seller?.phone || "",
+          vehicleName: lead ? `${lead.year} ${lead.make} ${lead.model}` : "Unknown Vehicle",
+          sellerLeadId: lead?.id || "",
+          status,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.scheduledAt && !b.scheduledAt) return 0;
+        if (!a.scheduledAt) return 1;
+        if (!b.scheduledAt) return -1;
+        return a.scheduledAt.getTime() - b.scheduledAt.getTime();
+      });
 
     return NextResponse.json({
       stats: {

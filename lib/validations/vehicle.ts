@@ -42,16 +42,27 @@ export const inspectionSchema = z.object({
 
 export const sellerLeadSchema = z.object({
   id: z.string().optional(),
-  make: z.string().min(1),
-  model: z.string().min(1),
-  variant: z.string().min(1),
-  vehicleNumber: z.string().min(1),
-  year: z.number().min(2010),
-  kmDriven: z.number().min(0),
-  expectedPrice: z.number().min(0),
-  description: z.string().optional(),
-  warrantyStatus: z.string().optional(),
-  photos: z.array(z.string()).min(1),
+  make: z.string().trim().min(1),
+  model: z.string().trim().min(1),
+  variant: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .regex(/^[\p{L}\p{N} .,'#&()\-/\\+]+$/u, "Variant contains invalid characters"),
+  vehicleNumber: z
+    .string()
+    .trim()
+    .transform((v) => v.replace(/[\s-]/g, "").toUpperCase())
+    .pipe(z.string().regex(/^[A-Z]{2}[0-9]{1,3}[A-Z]{1,3}[0-9]{4}$/, "Enter a valid registration number (e.g. KA 01 AB 1234)")),
+  year: z.number().int("Enter a valid year (e.g. 2023)").min(2010, "Year must be 2010 or later").max(new Date().getFullYear(), "Year cannot be in the future"),
+  kmDriven: z.number().int("Enter the kilometers driven (e.g. 25000)").min(0, "Kilometers driven cannot be negative").max(999999, "Kilometers driven seems too high"),
+  expectedPrice: z.number("Enter a valid price in INR (e.g. 3500000)").min(0, "Expected price cannot be negative").max(10000000, "Expected price seems too high"),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  warrantyStatus: z.string().trim().max(100).optional().or(z.literal("")),
+  photos: z.array(z.string()).min(1, "At least one photo is required"),
+  selectedDate: z.string().optional(),
+  selectedSlot: z.string().optional(),
 })
 
 export const buyerLeadSchema = z.object({

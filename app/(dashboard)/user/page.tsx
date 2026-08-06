@@ -4,10 +4,10 @@ import { useState, useMemo } from "react"
 import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion"
 import Link from "next/link"
 import {
-  Search, Heart, Car, Battery, Zap, Gauge, Star, MapPin, Calendar,
-  DollarSign, TrendingUp, Clock, MessageCircle, Eye,
-  ChevronDown, ChevronRight, ChevronLeft, Filter, Grid, List,
-  Sparkles, Shield, Wallet, Bot, GitBranch, Loader2, X
+  Search, Heart, Car, Battery, Gauge, Star,
+  DollarSign, Eye,
+  ChevronDown, ChevronLeft, ChevronRight, Filter,
+  Sparkles, Shield, Bot, Check
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -15,22 +15,16 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Slider } from "@/components/ui/slider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useVehicles, useToggleWishlist, useWishlist, type VehicleListing } from "@/hooks/use-api"
 import { useCompareStore } from "@/hooks/use-compare"
+import { CompareBar } from "@/components/compare/CompareBar"
 import { cn } from "@/lib/utils"
-import { SEARCH_SUGGESTIONS } from "@/lib/search-parser"
-
-const quickActions = [
-  { label: 'Find EV', icon: Search, href: '/inventory', color: 'bg-primary/10 text-primary' },
-  { label: 'Sell EV', icon: TrendingUp, href: '/sell', color: 'bg-green-500/10 text-green-500' },
-  { label: 'Book Test Drive', icon: Calendar, href: '/user/bookings', color: 'bg-blue-500/10 text-blue-500' },
-  { label: 'Compare EVs', icon: GitBranch, href: '/compare', color: 'bg-indigo-500/10 text-indigo-500' },
-  { label: 'Finance', icon: Wallet, href: '/financing', color: 'bg-amber-500/10 text-amber-500' },
-  { label: 'Charging', icon: Zap, href: '/charging', color: 'bg-primary/10 text-primary' },
-]
+import { parseSearchQuery, SEARCH_SUGGESTIONS } from "@/lib/search-parser"
+import { PriceFilter, formatPriceRange } from "@/components/filters/PriceFilter"
 
 const AISearchBar = ({ onSearch }: { onSearch: (q: string) => void }) => {
   const [query, setQuery] = useState('')
@@ -66,7 +60,7 @@ const AISearchBar = ({ onSearch }: { onSearch: (q: string) => void }) => {
       </form>
       <div className="flex flex-wrap gap-2 mt-4 justify-center">
         {["Tesla", "BYD", "Hyundai", "BMW", "Under 20L", "Long Range", "SUV"].map((chip) => (
-          <button key={chip} onClick={() => onSearch(chip)} className="px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-sm text-gray-700 hover:border-primary hover:bg-primary/5 transition-all duration-200">{chip}</button>
+          <button key={chip} onClick={() => { setQuery(chip); onSearch(chip) }} className="px-4 py-1.5 rounded-full bg-white/80 backdrop-blur-sm border border-gray-200 text-sm text-gray-700 hover:border-primary hover:bg-primary/5 transition-all duration-200">{chip}</button>
         ))}
       </div>
     </div>
@@ -103,7 +97,7 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3 }} className="group relative" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       <Link href={`/inventory/${vehicle.id}`}>
-        <Card className="overflow-hidden border-0 shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white rounded-2xl">
+        <Card className="glass overflow-hidden border shadow-sm hover:shadow-2xl transition-all duration-500 cursor-pointer rounded-2xl">
           <div className="relative aspect-[4/3] bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
             {parsedPhotos?.[0] ? (
               <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -119,9 +113,6 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
             <div className="absolute top-3 right-3 flex flex-col gap-1.5">
               <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleWishlist() }} className="p-2 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-colors shadow-sm">
                 <Heart className={cn("w-4 h-4 transition-colors", isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600")} />
-              </button>
-              <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCompare() }} className={cn("p-2 rounded-full backdrop-blur-sm transition-colors shadow-sm", isCompared ? "bg-primary text-white" : "bg-white/90 hover:bg-white text-gray-600")}>
-                <GitBranch className="w-4 h-4" />
               </button>
             </div>
             {batteryHealth != null && (
@@ -165,6 +156,28 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
               <Button className="flex-1 bg-primary hover:bg-primary-dark text-white text-xs h-8 rounded-full" asChild>
                 <span><Eye className="w-3 h-3 mr-1" />View Details</span>
               </Button>
+              <Button
+                type="button"
+                size="sm"
+                asChild
+                aria-pressed={isCompared}
+                className={cn(
+                  "h-8 rounded-full text-xs gap-1.5 shrink-0 border",
+                  isCompared
+                    ? "bg-primary border-primary text-white hover:bg-primary-dark"
+                    : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                )}
+              >
+                <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleCompare() }}>
+                  <div className={cn(
+                    "w-3.5 h-3.5 rounded-[4px] border-2 flex items-center justify-center transition-colors",
+                    isCompared ? "border-white bg-white/25" : "border-gray-300 bg-white"
+                  )}>
+                    {isCompared && <Check className="w-2.5 h-2.5" />}
+                  </div>
+                  Compare
+                </span>
+              </Button>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0 rounded-full" asChild>
                 <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleWishlist() }}><Heart className={cn("w-3 h-3", isWishlisted ? "fill-red-500 text-red-500" : "")} /></span>
               </Button>
@@ -176,22 +189,6 @@ const VehicleCard = ({ vehicle, isWishlisted, onToggleWishlist, isCompared, onTo
   )
 }
 
-const QuickActionsGrid = () => (
-  <Card className="p-6 border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-    <div className="mb-4"><h2 className="text-lg font-semibold flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary" />Quick Actions</h2><p className="text-sm text-gray-500">Get started with these shortcuts</p></div>
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {quickActions.map((action, i) => (
-        <Link key={i} href={action.href}>
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group">
-            <div className={cn("p-3 rounded-full group-hover:scale-110 transition-transform", action.color)}><action.icon className="w-5 h-5" /></div>
-            <span className="text-sm font-medium">{action.label}</span>
-          </motion.div>
-        </Link>
-      ))}
-    </div>
-  </Card>
-)
-
 export default function UnifiedUserDashboard() {
   const [mode, setMode] = useState<'buy' | 'sell' | 'hybrid'>('hybrid')
   const [search, setSearch] = useState('')
@@ -199,6 +196,7 @@ export default function UnifiedUserDashboard() {
   const [sortBy, setSortBy] = useState('newest')
   const [page, setPage] = useState(1)
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000000])
+  const [minBattery, setMinBattery] = useState(0)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
   const [aiQuery, setAiQuery] = useState("")
   const compareStore = useCompareStore()
@@ -210,6 +208,7 @@ export default function UnifiedUserDashboard() {
     brand: brand || undefined,
     minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxPrice: priceRange[1] < 10000000 ? priceRange[1] : undefined,
+    minBatteryHealth: minBattery > 0 ? minBattery : undefined,
     sortBy,
   })
 
@@ -221,6 +220,18 @@ export default function UnifiedUserDashboard() {
   const total = vehiclesData?.total ?? 0
 
   const wishlistIds = useMemo(() => new Set(wishlistData?.data?.map(v => v.id) ?? []), [wishlistData])
+
+  const applyParsedSearch = (raw: string) => {
+    const parsed = parseSearchQuery(raw)
+    setSearch(parsed.text)
+    if (parsed.brand) setBrand(parsed.brand)
+    if (parsed.maxPrice != null || parsed.minPrice != null) {
+      setPriceRange([parsed.minPrice ?? 0, parsed.maxPrice ?? 10000000])
+    }
+    if (parsed.minBattery != null) setMinBattery(parsed.minBattery)
+    if (parsed.sortBy) setSortBy(parsed.sortBy)
+    setPage(1)
+  }
 
   const { scrollY } = useScroll()
   const heroOpacity = useTransform(scrollY, [0, 300], [1, 0])
@@ -245,20 +256,18 @@ export default function UnifiedUserDashboard() {
             <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-8">
               {mode === 'buy' ? 'Explore verified EVs with transparent pricing and inspection reports.' : mode === 'sell' ? 'Get instant offers and sell your EV with zero hassle.' : 'Buy, sell, compare, and manage your EV journey all in one place.'}
             </p>
-            <AISearchBar onSearch={(q) => { setSearch(q); setPage(1) }} />
+            <AISearchBar onSearch={applyParsedSearch} />
           </motion.div>
         </div>
       </motion.section>
 
       <div className="container mx-auto px-4 py-8">
-        <QuickActionsGrid />
-
-        <div className="mt-8">
+        <div>
           {/* Filter bar */}
           <div className="sticky top-16 md:top-20 z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 py-3 px-4 shadow-sm rounded-t-xl">
             <div className="flex flex-wrap items-center gap-3">
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-9 px-3 lg:hidden" onClick={() => setIsFilterSheetOpen(true)}><Filter className="w-4 h-4 mr-2" />Filters</Button>
+                <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => setIsFilterSheetOpen(true)}><Filter className="w-4 h-4 mr-2" />Filters</Button>
                 <Select value={brand} onValueChange={(v) => { setBrand(v === 'all' ? '' : v); setPage(1) }}>
                   <SelectTrigger className="w-36 h-9"><SelectValue placeholder="All Brands" /></SelectTrigger>
                   <SelectContent>
@@ -280,10 +289,21 @@ export default function UnifiedUserDashboard() {
                 </Select>
               </div>
               <div className="flex items-center gap-2 ml-auto text-sm">
-                <span className="text-gray-500 hidden sm:inline">{(priceRange[0] / 100000).toFixed(0)}L - {(priceRange[1] / 100000).toFixed(0)}L</span>
-                <div className="w-32 hidden sm:block"><Slider value={priceRange} min={0} max={10000000} step={100000} onValueChange={(v) => setPriceRange(v as [number, number])} /></div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-9 gap-2" aria-label="Price filter">
+                      <DollarSign className="w-4 h-4" />
+                      <span>{formatPriceRange(priceRange[0], priceRange[1])}</span>
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-80 p-4">
+                    <p className="text-sm font-semibold mb-3 flex items-center gap-2"><DollarSign className="w-4 h-4 text-primary" />Price Range</p>
+                    <PriceFilter range={priceRange} onChange={(r) => { setPriceRange(r); setPage(1) }} />
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <p className="text-gray-500 whitespace-nowrap">{isLoading ? 'Loading...' : `${total} vehicles found`}</p>
               </div>
-              <p className="text-sm text-gray-500">{isLoading ? 'Loading...' : `${total} vehicles found`}</p>
             </div>
           </div>
 
@@ -299,7 +319,7 @@ export default function UnifiedUserDashboard() {
               <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-2">No vehicles found</h3>
               <p className="text-gray-500">Try adjusting your filters or search terms</p>
-              <Button variant="outline" className="mt-4" onClick={() => { setSearch(''); setBrand(''); setPriceRange([0, 10000000]); setPage(1) }}>Clear all filters</Button>
+              <Button variant="outline" className="mt-4" onClick={() => { setSearch(''); setBrand(''); setPriceRange([0, 10000000]); setMinBattery(0); setPage(1) }}>Clear all filters</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -328,30 +348,20 @@ export default function UnifiedUserDashboard() {
         <SheetContent side="left" className="w-[300px] sm:w-[400px]">
           <SheetHeader><SheetTitle>Filters</SheetTitle></SheetHeader>
           <div className="mt-6 space-y-4">
-            <div><label className="text-sm font-medium">Brand</label><Select value={brand} onValueChange={(v) => { setBrand(v === 'all' ? '' : v); setPage(1) }}><SelectTrigger className="mt-1"><SelectValue placeholder="All Brands" /></SelectTrigger><SelectContent><SelectItem value="all">All Brands</SelectItem>{["Tesla", "BYD", "Hyundai", "BMW", "Mercedes", "Audi", "Kia"].map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent></Select></div>
-            <div><label className="text-sm font-medium">Sort By</label><Select value={sortBy} onValueChange={(v) => { setSortBy(v); setPage(1) }}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">Newest</SelectItem><SelectItem value="price_low">Price: Low to High</SelectItem><SelectItem value="price_high">Price: High to Low</SelectItem><SelectItem value="battery">Battery</SelectItem></SelectContent></Select></div>
-            <div><label className="text-sm font-medium">Price Range</label><div className="mt-2"><Slider value={priceRange} min={0} max={10000000} step={100000} onValueChange={(v) => setPriceRange(v as [number, number])} /><div className="flex justify-between text-xs text-gray-500 mt-1"><span>{(priceRange[0] / 100000).toFixed(0)}L</span><span>{(priceRange[1] / 100000).toFixed(0)}L</span></div></div></div>
-            <Button className="w-full" onClick={() => setIsFilterSheetOpen(false)}>Apply Filters</Button>
+            <div><label className="text-sm font-medium">Brand</label><Select value={brand} onValueChange={(v) => { setBrand(v === 'all' ? '' : v); setPage(1) }}><SelectTrigger className="mt-1"><SelectValue placeholder="All Brands" /></SelectTrigger><SelectContent><SelectItem value="all">All Brands</SelectItem>{["Tesla", "BYD", "Hyundai", "BMW", "Mercedes", "Audi", "Kia", "MG", "Tata", "Mahindra"].map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent></Select></div>
+            <div><label className="text-sm font-medium">Sort By</label><Select value={sortBy} onValueChange={(v) => { setSortBy(v); setPage(1) }}><SelectTrigger className="mt-1"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="newest">Newest First</SelectItem><SelectItem value="price_low">Price: Low to High</SelectItem><SelectItem value="price_high">Price: High to Low</SelectItem><SelectItem value="battery">Battery Health</SelectItem><SelectItem value="km">Kilometers</SelectItem></SelectContent></Select></div>
+            <div><label className="text-sm font-medium">Price Range</label><div className="mt-2"><PriceFilter range={priceRange} onChange={(r) => { setPriceRange(r); setPage(1) }} /></div></div>
+            <div><label className="text-sm font-medium">Min Battery Health</label><div className="mt-2"><Slider value={[minBattery]} min={0} max={100} step={5} onValueChange={(v) => { setMinBattery(v[0]); setPage(1) }} /><div className="text-xs text-gray-500 mt-1">{minBattery > 0 ? `${minBattery}%+` : 'Any'}</div></div></div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setSearch(''); setBrand(''); setPriceRange([0, 10000000]); setMinBattery(0); setPage(1) }}>Reset</Button>
+              <Button className="flex-1" onClick={() => setIsFilterSheetOpen(false)}>Apply Filters</Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
 
       {/* Floating Compare Bar */}
-      <AnimatePresence>
-        {compareStore.ids.length > 0 && (
-          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t shadow-2xl">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">{compareStore.ids.length}/4 selected</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={compareStore.clear}><X className="w-4 h-4 mr-1" />Clear</Button>
-                <Link href="/compare"><Button size="sm">Compare Now</Button></Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CompareBar />
 
       {/* Floating AI Assistant */}
       <div className="fixed bottom-8 right-8 z-50">
@@ -375,7 +385,7 @@ export default function UnifiedUserDashboard() {
                   onChange={(e) => setAiQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      setSearch(aiQuery)
+                      applyParsedSearch(aiQuery)
                       setIsFilterSheetOpen(false)
                       setAiQuery("")
                     }
@@ -385,7 +395,7 @@ export default function UnifiedUserDashboard() {
                   size="sm"
                   className="absolute right-1 top-1"
                   onClick={() => {
-                    setSearch(aiQuery)
+                    applyParsedSearch(aiQuery)
                     setIsFilterSheetOpen(false)
                     setAiQuery("")
                   }}

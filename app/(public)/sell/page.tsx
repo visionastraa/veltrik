@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BRANDS, getModelsByBrand } from "@/lib/brandModels"
 import { useSellStore } from "@/store/use-sell-store"
 import { cn } from "@/lib/utils"
+import { validateStep1, validateStep1Field, inputErrorClass, selectErrorClass } from "@/lib/sell-validation"
 
 export default function SellStep1Page() {
   const router = useRouter()
@@ -27,14 +28,18 @@ export default function SellStep1Page() {
 
   const update = (field: string, value: any) => setFormData({ [field]: value })
 
+  const handleBlur = (field: string, value: any) => {
+    const err = validateStep1Field(field, value)
+    setErrors(prev => {
+      const next = { ...prev }
+      if (err) next[field] = err
+      else delete next[field]
+      return next
+    })
+  }
+
   const validate = (): boolean => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.make) newErrors.make = "Required"
-    if (!formData.model) newErrors.model = "Required"
-    if (!formData.variant) newErrors.variant = "Required"
-    if (!formData.vehicleNumber) newErrors.vehicleNumber = "Required"
-    if (!formData.year || formData.year < 2010) newErrors.year = "Invalid year"
-    if (!formData.kmDriven) newErrors.kmDriven = "Required"
+    const newErrors = validateStep1(formData)
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -88,7 +93,7 @@ export default function SellStep1Page() {
               <div>
                 <Label>Make *</Label>
                 <Select value={formData.make} onValueChange={(v: string) => { update("make", v); update("model", ""); setErrors(prev => ({ ...prev, make: "" })) }}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select brand" /></SelectTrigger>
+                  <SelectTrigger className={cn("mt-1", errors.make && selectErrorClass)} onBlur={() => handleBlur("make", formData.make)}><SelectValue placeholder="Select brand" /></SelectTrigger>
                   <SelectContent>
                     {BRANDS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                   </SelectContent>
@@ -98,7 +103,7 @@ export default function SellStep1Page() {
               <div>
                 <Label>Model *</Label>
                 <Select value={formData.model} onValueChange={(v: string) => { update("model", v); setErrors(prev => ({ ...prev, model: "" })) }} disabled={!formData.make}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder={formData.make ? "Select model" : "Select brand first"} /></SelectTrigger>
+                  <SelectTrigger className={cn("mt-1", errors.model && selectErrorClass)} onBlur={() => handleBlur("model", formData.model)}><SelectValue placeholder={formData.make ? "Select model" : "Select brand first"} /></SelectTrigger>
                   <SelectContent>
                     {getModelsByBrand(formData.make).map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                   </SelectContent>
@@ -107,22 +112,22 @@ export default function SellStep1Page() {
               </div>
               <div>
                 <Label>Variant *</Label>
-                <Input className="mt-1" placeholder="e.g. Long Range" value={formData.variant} onChange={(e) => { update("variant", e.target.value); setErrors(prev => ({ ...prev, variant: "" })) }} />
+                <Input className={cn("mt-1", errors.variant && inputErrorClass)} placeholder="e.g. Long Range" value={formData.variant} onChange={(e) => { update("variant", e.target.value); setErrors(prev => ({ ...prev, variant: "" })) }} onBlur={() => handleBlur("variant", formData.variant)} />
                 {errors.variant && <p className="text-xs text-red-500 mt-1">{errors.variant}</p>}
               </div>
               <div>
                 <Label>Vehicle Number *</Label>
-                <Input className="mt-1" placeholder="e.g. DL 01 AB 1234" value={formData.vehicleNumber} onChange={(e) => { update("vehicleNumber", e.target.value); setErrors(prev => ({ ...prev, vehicleNumber: "" })) }} />
+                <Input className={cn("mt-1", errors.vehicleNumber && inputErrorClass)} placeholder="e.g. DL 01 AB 1234" value={formData.vehicleNumber} onChange={(e) => { update("vehicleNumber", e.target.value); setErrors(prev => ({ ...prev, vehicleNumber: "" })) }} onBlur={() => handleBlur("vehicleNumber", formData.vehicleNumber)} />
                 {errors.vehicleNumber && <p className="text-xs text-red-500 mt-1">{errors.vehicleNumber}</p>}
               </div>
               <div>
                 <Label>Year *</Label>
-                <Input className="mt-1" type="number" min={2010} max={new Date().getFullYear()} value={formData.year} onChange={(e) => { update("year", parseInt(e.target.value)); setErrors(prev => ({ ...prev, year: "" })) }} />
+                <Input className={cn("mt-1", errors.year && inputErrorClass)} type="number" min={2010} max={new Date().getFullYear()} value={formData.year || ""} onChange={(e) => { update("year", parseInt(e.target.value)); setErrors(prev => ({ ...prev, year: "" })) }} onBlur={() => handleBlur("year", formData.year)} />
                 {errors.year && <p className="text-xs text-red-500 mt-1">{errors.year}</p>}
               </div>
               <div>
                 <Label>Kilometers Driven *</Label>
-                <Input className="mt-1" type="number" min={0} placeholder="e.g. 25000" value={formData.kmDriven || ""} onChange={(e) => { update("kmDriven", parseInt(e.target.value) || 0); setErrors(prev => ({ ...prev, kmDriven: "" })) }} />
+                <Input className={cn("mt-1", errors.kmDriven && inputErrorClass)} type="number" min={0} placeholder="e.g. 25000" value={formData.kmDriven || ""} onChange={(e) => { update("kmDriven", parseInt(e.target.value) || 0); setErrors(prev => ({ ...prev, kmDriven: "" })) }} onBlur={() => handleBlur("kmDriven", formData.kmDriven)} />
                 {errors.kmDriven && <p className="text-xs text-red-500 mt-1">{errors.kmDriven}</p>}
               </div>
             </div>

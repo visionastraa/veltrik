@@ -61,7 +61,7 @@ export function VehicleCard({
   const formattedPrice = `₹${(price / 100000).toFixed(2)} Lakh`
 
   return (
-    <Card className={cn("group overflow-hidden rounded-2xl border border-gray-200/80 bg-white hover:shadow-xl transition-all duration-300 flex flex-col relative", className)}>
+    <Card className={cn("glass group overflow-hidden rounded-2xl border hover:shadow-xl transition-all duration-300 flex flex-col relative", className)}>
       {/* Image & Badges */}
       <div className="relative aspect-[16/10] w-full overflow-hidden bg-gray-100">
         <Image

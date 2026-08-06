@@ -47,5 +47,5 @@ export function buildBookingConfirmationEmail(name: string, vehicle: string, dat
 }
 
 export function buildPaymentReceiptEmail(name: string, amount: number, orderId: string): string {
-  return `<div style="font-family:sans-serif;max-width:600px;margin:auto"><h1>Payment Receipt</h1><p>Hi ${name},</p><p>Your payment of ₹${(amount / 100).toLocaleString()} for order <strong>${orderId}</strong> was successful.</p></div>`
+  return `<div style="font-family:sans-serif;max-width:600px;margin:auto"><h1>Payment Receipt</h1><p>Hi ${name},</p><p>Your payment of ₹${(amount / 100).toLocaleString("en-IN")} for order <strong>${orderId}</strong> was successful.</p></div>`
 }

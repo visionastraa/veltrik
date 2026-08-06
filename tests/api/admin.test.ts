@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { getServerSession } from "next-auth"
-import { createNextReq, parseResponse } from "../helpers/next-request"
-import { createUser, createListing, createPayment, createSellerLead } from "../helpers/factories"
+import { parseResponse } from "../helpers/next-request"
+import { createUser, createSellerLead, createBuyerLead } from "../helpers/factories"
 
 vi.mock("next-auth", () => ({ getServerSession: vi.fn(), default: {} }))
 vi.mock("@/lib/socket-emitter", () => ({ emitToUser: vi.fn(), emitToListing: vi.fn(), emitToConversation: vi.fn() }))
@@ -21,8 +21,9 @@ beforeEach(async () => {
 describe("Admin Stats API", () => {
   describe("GET /api/admin/stats", () => {
     it("returns stats for admin users", async () => {
-      await createListing({ price: 200000 })
-      await createPayment({ userId: adminUser.id, amount: 50000, status: "paid" })
+      await createSellerLead({ status: "ACQUIRED" })
+      await createSellerLead({ status: "SCHEDULED" })
+      await createBuyerLead({ listingId: null })
       gp(adminUser.id, "ADMIN")
 
       const { GET } = await import("@/app/api/admin/stats/route")
@@ -30,10 +31,12 @@ describe("Admin Stats API", () => {
       const { status, data } = await parseResponse(res)
 
       expect(status).toBe(200)
-      expect(data.success).toBe(true)
-      expect(data.totalListings).toBe(1)
-      expect(data.totalLeads).toBe(1)
-      expect(data.totalRevenue).toBe(50000)
+      expect(data.stats.acquiredThisMonth).toBe(1)
+      expect(data.stats.activeListings).toBe(0)
+      expect(data.stats.pendingInspections).toBe(1)
+      expect(data.stats.buyerLeads).toBe(1)
+      expect(data.stats.followUpRequired).toBe(0)
+      expect(Array.isArray(data.activity)).toBe(true)
     })
 
     it("rejects non-admin users", async () => {
@@ -43,7 +46,7 @@ describe("Admin Stats API", () => {
       const { GET } = await import("@/app/api/admin/stats/route")
       const res = await GET()
       const { status } = await parseResponse(res)
-      expect(status).toBe(403)
+      expect(status).toBe(401)
     })
 
     it("rejects unauthenticated", async () => {
@@ -51,7 +54,7 @@ describe("Admin Stats API", () => {
       const { GET } = await import("@/app/api/admin/stats/route")
       const res = await GET()
       const { status } = await parseResponse(res)
-      expect(status).toBe(403)
+      expect(status).toBe(401)
     })
   })
 })

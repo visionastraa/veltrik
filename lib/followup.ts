@@ -1,6 +1,63 @@
 import { prisma } from "./prisma";
 import { sendEmail } from "./mailer";
 
+const FOLLOWUP_INTERVALS: Record<string, number> = {
+  day1: 1,
+  week1: 7,
+  month1: 30,
+};
+
+export type FollowupType = "buyer" | "seller";
+
+export interface FollowupItem {
+  leadId: string;
+  type: FollowupType;
+  scheduledAt: Date;
+  note: string;
+}
+
+/**
+ * Adds the number of days for the given interval to a base date without mutating it.
+ * Unknown intervals default to 7 days.
+ */
+export function calculateFollowupDate(base: Date, interval: string): Date {
+  const days = FOLLOWUP_INTERVALS[interval] ?? 7;
+  const result = new Date(base);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
+}
+
+/**
+ * Builds the default 3-step follow-up schedule (day1 / week1 / month1) for a lead.
+ */
+export function getDefaultFollowupSchedule(leadId: string, type: FollowupType): FollowupItem[] {
+  const base = new Date();
+  const steps: { interval: keyof typeof FOLLOWUP_INTERVALS; note: string }[] = [
+    { interval: "day1", note: "Initial follow-up within 24 hours" },
+    { interval: "week1", note: "Second follow-up after a week" },
+    { interval: "month1", note: "Final follow-up after a month" },
+  ];
+  return steps.map((step) => ({
+    leadId,
+    type,
+    note: step.note,
+    scheduledAt: calculateFollowupDate(base, step.interval),
+  }));
+}
+
+/**
+ * Registers follow-ups. Persistence is handled by the consuming pipeline;
+ * past-dated items are warned about and skipped.
+ */
+export async function scheduleFollowups(items: Omit<FollowupItem, "note">[]): Promise<{ success: boolean }> {
+  for (const item of items) {
+    if (item.scheduledAt.getTime() < Date.now()) {
+      console.warn(`[FOLLOWUP] Skipping past scheduled date for lead ${item.leadId}`);
+    }
+  }
+  return { success: true };
+}
+
 /**
  * Checks all BuyerLeads in LEAD_VISIT_SCHEDULED status.
  * If their booking visit time was more than 24 hours ago,

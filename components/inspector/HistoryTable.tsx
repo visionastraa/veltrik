@@ -125,7 +125,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
                 setRatingFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+              className="glass w-full px-3.5 py-2 rounded-xl border text-sm outline-none focus:border-ring focus:ring-2"
             >
               <option value="all">All Ratings</option>
               <option value="5">5 Stars</option>
@@ -144,7 +144,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
                 setMileageFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+              className="glass w-full px-3.5 py-2 rounded-xl border text-sm outline-none focus:border-ring focus:ring-2"
             >
               <option value="all">All Mileage</option>
               <option value="under10">Under 10,000 km</option>
@@ -161,7 +161,7 @@ export default function HistoryTable({ inspections }: HistoryTableProps) {
                 setSortOrder(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+              className="glass w-full px-3.5 py-2 rounded-xl border text-sm outline-none focus:border-ring focus:ring-2"
             >
               <option value="desc">Newest First</option>
               <option value="asc">Oldest First</option>

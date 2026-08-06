@@ -5,6 +5,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
+      // Tests run against a local PostgreSQL database; use the client generated
+      // from prisma/schema.test.prisma instead of the MySQL production client.
+      "@prisma/client": path.resolve(__dirname, "node_modules/.prisma/test-client"),
     },
   },
   test: {

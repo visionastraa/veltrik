@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Loader2, CheckCircle, ArrowLeft, Home } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useSubmitSeller } from "@/hooks/use-api"
@@ -19,11 +20,16 @@ export default function SellStep3Page() {
   const handleSubmit = () => {
     submitMutation.mutate(formData as any, {
       onSuccess: (data) => {
-        if (data.success) {
-          setSuccess(true)
-          reset() // clear store
+        if (!data?.success) {
+          toast.error(data?.details ? `${data.error}: ${data.details}` : (data?.error || "Failed to submit vehicle"))
+          return
         }
-      }
+        setSuccess(true)
+        reset() // clear store
+      },
+      onError: (error) => {
+        toast.error(error instanceof Error ? error.message : "Failed to submit vehicle")
+      },
     })
   }
 

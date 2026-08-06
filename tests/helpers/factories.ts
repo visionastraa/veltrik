@@ -41,7 +41,7 @@ export async function createSellerLead(overrides: DeepPartial<SellerLead> = {}) 
       warrantyStatus: overrides.warrantyStatus ?? "ACTIVE",
       expectedPrice: overrides.expectedPrice ?? 150000,
       description: overrides.description ?? null,
-      photos: (overrides.photos ?? []).filter((p): p is string => !!p),
+      photos: JSON.stringify((overrides.photos ?? []).filter((p): p is string => !!p)),
       status: (overrides.status as any) ?? "SUBMITTED",
       scheduledAt: (overrides.scheduledAt as any) ?? null,
     },
@@ -102,7 +102,7 @@ export async function createListing(overrides: DeepPartial<Listing> = {}) {
       title: overrides.title ?? "Test Listing",
       price: overrides.price ?? 150000,
       status: (overrides.status as any) ?? "AVAILABLE",
-      photos: (overrides.photos ?? []).filter((p): p is string => !!p),
+      photos: JSON.stringify((overrides.photos ?? []).filter((p): p is string => !!p)),
       publishedAt: overrides.publishedAt != null ? new Date(overrides.publishedAt as any) : new Date(),
     },
   })
@@ -123,8 +123,8 @@ export async function createBuyerLead(overrides: DeepPartial<BuyerLead> = {}) {
     data: {
       userId: user.id,
       listingId: listingId ?? null,
-      brandsInterested: (overrides.brandsInterested ?? ["Ola", "Ather"]).filter((b): b is string => !!b),
-      modelsInterested: (overrides.modelsInterested ?? ["S1 Pro", "450X"]).filter((m): m is string => !!m),
+      brandsInterested: JSON.stringify((overrides.brandsInterested ?? ["Ola", "Ather"]).filter((b): b is string => !!b)),
+      modelsInterested: JSON.stringify((overrides.modelsInterested ?? ["S1 Pro", "450X"]).filter((m): m is string => !!m)),
       status: (overrides.status as any) ?? "LEAD_VISIT_SCHEDULED",
     },
   })

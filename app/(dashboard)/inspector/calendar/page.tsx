@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import GoogleCalendarView from "@/components/inspector/GoogleCalendarView";
+import CalendarPanel from "@/components/inspector/CalendarPanel";
 
 export default async function CalendarPage() {
   const session = await getServerSession(authOptions);
@@ -11,6 +11,7 @@ export default async function CalendarPage() {
   const bookings = await prisma.booking.findMany({
     where: {
       type: "SELLER_INSPECTION",
+      status: { not: "cancelled" },
     },
     include: {
       sellerLead: {
@@ -46,7 +47,7 @@ export default async function CalendarPage() {
         </p>
       </div>
 
-      <GoogleCalendarView bookings={myBookings} />
+      <CalendarPanel bookings={myBookings} />
     </div>
   );
 }

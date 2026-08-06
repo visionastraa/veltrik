@@ -221,7 +221,7 @@ export default function Part1({ data, onChange }: Part1Props) {
               <select
                 value={data.warrantyType}
                 onChange={(e) => onChange({ warrantyType: e.target.value })}
-                className="w-full px-3.5 py-2 rounded-lg border border-border bg-background text-sm outline-none focus:border-ring focus:ring-2"
+                className="glass w-full px-3.5 py-2 rounded-lg border text-sm outline-none focus:border-ring focus:ring-2"
               >
                 <option value="">Select Warranty Type</option>
                 <option value="standard">Standard Warranty</option>

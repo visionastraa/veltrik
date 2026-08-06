@@ -20,7 +20,7 @@ interface DashboardData {
     sellerPhone: string;
     vehicleName: string;
     sellerLeadId: string;
-    status: "completed" | "in-progress" | "not-started";
+    status: "completed" | "in-progress" | "not-started" | "missed";
   }>;
 }
 

@@ -41,14 +41,14 @@ describe("Inspector API", () => {
 
   describe("GET /api/inspector/leads/[id]", () => {
     it("returns a single lead", async () => {
-      const lead = await createSellerLead()
+      const inspection = await createInspection({ inspectorId: inspector.id })
       gp(inspector.id)
       const { GET } = await import("@/app/api/inspector/leads/[id]/route")
-      const req = createNextReq({ method: "GET", path: `/api/inspector/leads/${lead.id}` })
-      const res = await GET(req, { params: Promise.resolve({ id: lead.id }) })
+      const req = createNextReq({ method: "GET", path: `/api/inspector/leads/${inspection.sellerLeadId}` })
+      const res = await GET(req, { params: Promise.resolve({ id: inspection.sellerLeadId }) })
       const { status, data } = await parseResponse(res)
       expect(status).toBe(200)
-      expect(data.data.id).toBe(lead.id)
+      expect(data.data.id).toBe(inspection.sellerLeadId)
     })
 
     it("returns 404 for non-existent lead", async () => {

@@ -52,18 +52,18 @@ export default function TodaySchedule({ schedule }: TodayScheduleProps) {
       <div className="flex items-center justify-between pb-2 border-b border-border">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
           <Clock className="size-5 text-muted-foreground" />
-          <span>Today's Inspection Schedule</span>
+          <span>Assigned Inspections</span>
         </h2>
         <span className="text-xs text-muted-foreground font-medium">
-          {schedule.length} scheduled
+          {schedule.length} assigned
         </span>
       </div>
 
       {schedule.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground space-y-2">
           <CheckCircle className="size-10 mx-auto opacity-40 text-emerald-500" />
-          <p className="text-sm font-semibold">All clear for today!</p>
-          <p className="text-xs">No inspections scheduled for this date.</p>
+          <p className="text-sm font-semibold">All clear!</p>
+          <p className="text-xs">No inspections assigned to you yet.</p>
         </div>
       ) : (
         <div className="divide-y divide-border">

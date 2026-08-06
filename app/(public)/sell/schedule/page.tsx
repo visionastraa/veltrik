@@ -13,6 +13,7 @@ import { PhotoUploadDropzone } from "@/components/ui/PhotoUploadDropzone"
 import { generateTimeSlots, getMinDate, getMaxDate } from "@/lib/slots"
 import { useSellStore } from "@/store/use-sell-store"
 import { cn } from "@/lib/utils"
+import { validateStep2, validateStep2Field, inputErrorClass, selectErrorClass } from "@/lib/sell-validation"
 
 export default function SellStep2Page() {
   const router = useRouter()
@@ -22,10 +23,18 @@ export default function SellStep2Page() {
 
   const update = (field: string, value: any) => setFormData({ [field]: value })
 
+  const handleBlur = (field: string, value: any) => {
+    const err = validateStep2Field(field, value)
+    setErrors(prev => {
+      const next = { ...prev }
+      if (err) next[field] = err
+      else delete next[field]
+      return next
+    })
+  }
+
   const validate = (): boolean => {
-    const newErrors: Record<string, string> = {}
-    if (!formData.expectedPrice || formData.expectedPrice <= 0) newErrors.expectedPrice = "Required"
-    if (formData.photos.length === 0) newErrors.photos = "At least one photo required"
+    const newErrors = validateStep2(formData)
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -50,6 +59,7 @@ export default function SellStep2Page() {
         const data = await res.json()
         if (data.success) {
           setFormData({ photos: [...formData.photos, data.url] })
+          setErrors(prev => { const next = { ...prev }; delete next.photos; return next })
         }
       }
     } finally {
@@ -57,9 +67,9 @@ export default function SellStep2Page() {
     }
   }
 
-  const handleRemoveExisting = (index: number) => {
+  const handleRemoveExisting = (url: string) => {
     setFormData({
-      photos: formData.photos.filter((_, i) => i !== index)
+      photos: formData.photos.filter((p) => p !== url)
     })
   }
 
@@ -106,7 +116,7 @@ export default function SellStep2Page() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>Expected Price (INR) *</Label>
-                <Input className="mt-1" type="number" min={0} placeholder="e.g. 3500000" value={formData.expectedPrice || ""} onChange={(e) => { update("expectedPrice", parseInt(e.target.value) || 0); setErrors(prev => ({ ...prev, expectedPrice: "" })) }} />
+                <Input className={cn("mt-1", errors.expectedPrice && inputErrorClass)} type="number" min={0} placeholder="e.g. 3500000" value={formData.expectedPrice || ""} onChange={(e) => { update("expectedPrice", parseInt(e.target.value) || 0); setErrors(prev => ({ ...prev, expectedPrice: "" })) }} onBlur={() => handleBlur("expectedPrice", formData.expectedPrice)} />
                 {errors.expectedPrice && <p className="text-xs text-red-500 mt-1">{errors.expectedPrice}</p>}
               </div>
               <div><Label>Warranty Status</Label><Input className="mt-1" placeholder="e.g. Active until 2027" value={formData.warrantyStatus} onChange={(e) => update("warrantyStatus", e.target.value)} /></div>
@@ -145,8 +155,8 @@ export default function SellStep2Page() {
                 </div>
                 <div>
                   <Label className="text-xs">Time Slot</Label>
-                  <Select value={formData.selectedSlot} onValueChange={(v) => update("selectedSlot", v)} disabled={!formData.selectedDate}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder={formData.selectedDate ? "Select time" : "Pick a date first"} /></SelectTrigger>
+                  <Select value={formData.selectedSlot} onValueChange={(v) => { update("selectedSlot", v); setErrors(prev => { const next = { ...prev }; delete next.selectedSlot; return next }) }} disabled={!formData.selectedDate}>
+                    <SelectTrigger className={cn("mt-1", errors.selectedSlot && selectErrorClass)}><SelectValue placeholder={formData.selectedDate ? "Select time" : "Pick a date first"} /></SelectTrigger>
                     <SelectContent>
                       {availableSlots.map(slot => (
                         <SelectItem key={slot.value} value={slot.value} disabled={!slot.available}>
@@ -155,6 +165,7 @@ export default function SellStep2Page() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.selectedSlot && <p className="text-xs text-red-500 mt-1">{errors.selectedSlot}</p>}
                 </div>
               </div>
             </div>

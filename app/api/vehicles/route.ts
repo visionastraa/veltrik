@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         inspectionId: body.inspectionId,
         title: body.title,
         price: body.price,
-        photos: body.photos || [],
+        photos: Array.isArray(body.photos) ? JSON.stringify(body.photos) : body.photos ?? "[]",
         publishedAt: new Date(),
       },
       include: { inspection: { include: { sellerLead: true } } },

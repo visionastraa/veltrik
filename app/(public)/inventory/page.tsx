@@ -2,10 +2,10 @@
 
 import Link from "next/link"
 import { useState, useMemo } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import {
   Car, Search, Battery, Gauge, Star, MapPin, Filter, ChevronLeft, ChevronRight,
-  Heart, Shield, X, SlidersHorizontal, Grid3X3, List, Zap, Eye, ChevronDown, Sparkles,
+  Heart, Shield, SlidersHorizontal, Grid3X3, List, Zap, Eye, ChevronDown, Sparkles, Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -20,8 +20,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useVehicles, useWishlist, useToggleWishlist, type VehicleListing } from "@/hooks/use-api"
 import { useCompareStore } from "@/hooks/use-compare"
+import { CompareBar } from "@/components/compare/CompareBar"
 import { cn } from "@/lib/utils"
 import { parseSearchQuery, SEARCH_SUGGESTIONS } from "@/lib/search-parser"
+import { PriceFilter, PRICE_BANDS } from "@/components/filters/PriceFilter"
 
 const BRANDS = ["Tesla", "BYD", "Hyundai", "BMW", "Mercedes", "Kia", "MG", "Tata", "Mahindra"]
 const BODY_TYPES = ["SUV", "Sedan", "Hatchback", "Coupe", "MPV"]
@@ -83,7 +85,7 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
 
   return (
     <motion.div whileHover={{ y: -6 }} className="group relative">
-      <Card className="overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300">
+      <Card className="glass overflow-hidden border shadow-md hover:shadow-2xl transition-all duration-300">
         <div className="relative aspect-[4/3] bg-gradient-to-br from-slate-100 to-slate-200 overflow-hidden">
           {parsedPhotos?.[0] ? (
             <img src={parsedPhotos[0]} alt={vehicle.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
@@ -119,17 +121,6 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
               {sl?.make && <span className="text-white/80 text-[10px]">{sl.make}</span>}
             </div>
           </div>
-          <div className="absolute bottom-3 left-3">
-            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect() }} className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-all",
-              isSelected ? "bg-primary text-white" : "bg-white/90 backdrop-blur-sm text-gray-700 hover:bg-white"
-            )}>
-              <div className={cn("w-3.5 h-3.5 rounded border-2 flex items-center justify-center text-[8px]", isSelected ? "border-white bg-white/20" : "border-gray-400")}>
-                {isSelected && "✓"}
-              </div>
-              Compare
-            </button>
-          </div>
           {isAvail && (
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onQuickView() }} className="flex items-center gap-2 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg text-sm font-medium text-gray-800 hover:bg-white transition-colors">
@@ -155,9 +146,31 @@ function VehicleCard({ vehicle, isWishlisted, onToggle, isSelected, onToggleSele
             {insp?.warrantyStatus && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{insp.warrantyStatus}</Badge>}
             {km < 30000 && <Badge variant="secondary" className="text-[9px] px-1.5 py-0">Low KM</Badge>}
           </div>
-          <Link href={`/inventory/${vehicle.id}`}>
-            <Button className="w-full mt-3" size="sm">View Details</Button>
-          </Link>
+          <div className="flex gap-2 mt-3">
+            <Link href={`/inventory/${vehicle.id}`} className="flex-1">
+              <Button className="w-full" size="sm">View Details</Button>
+            </Link>
+            <Button
+              type="button"
+              size="sm"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect() }}
+              aria-pressed={isSelected}
+              className={cn(
+                "shrink-0 gap-1.5 border",
+                isSelected
+                  ? "bg-primary border-primary text-white hover:bg-primary-dark"
+                  : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 rounded-[4px] border-2 flex items-center justify-center transition-colors",
+                isSelected ? "border-white bg-white/25" : "border-gray-300 bg-white"
+              )}>
+                {isSelected && <Check className="w-3 h-3" />}
+              </div>
+              Compare
+            </Button>
+          </div>
         </div>
       </Card>
     </motion.div>
@@ -264,8 +277,7 @@ export default function InventoryPage() {
   const filterContent = (
     <div className="space-y-4">
       <FilterSection label="Budget" open={openSections.budget} onToggle={() => toggleSection("budget")}>
-        <Slider value={priceRange} onValueChange={(v) => { setPriceRange([v[0], v[1]]); setPage(1) }} min={0} max={10000000} step={100000} />
-        <div className="flex justify-between text-xs text-gray-500"><span>₹{(priceRange[0] / 100000).toFixed(0)}L</span><span>₹{(priceRange[1] / 100000).toFixed(0)}L</span></div>
+        <PriceFilter range={priceRange} onChange={(r) => { setPriceRange(r); setPage(1) }} />
       </FilterSection>
       <FilterSection label="Brand" open={openSections.brand} onToggle={() => toggleSection("brand")}>
         {BRANDS.map((b) => (<label key={b} className="flex items-center gap-2 text-sm cursor-pointer">
@@ -355,9 +367,15 @@ export default function InventoryPage() {
               <SelectItem value="battery">Battery Health</SelectItem>
             </SelectContent>
           </Select>
-          <div className="hidden md:flex items-center gap-2 flex-1 min-w-[200px] max-w-xs">
-            <Slider value={priceRange} onValueChange={(v) => { setPriceRange([v[0], v[1]]); setPage(1) }} min={0} max={10000000} step={100000} className="flex-1" />
-            <span className="text-xs text-gray-500 whitespace-nowrap">₹{(priceRange[1] / 100000).toFixed(0)}L</span>
+          <div className="hidden md:block">
+            <Select value={PRICE_BANDS.find((b) => b.min === priceRange[0] && b.max === priceRange[1])?.label ?? "custom"} onValueChange={(v) => { const b = PRICE_BANDS.find((x) => x.label === v); if (b) { setPriceRange([b.min, b.max]); setPage(1) } }}>
+              <SelectTrigger className="w-36 h-9"><SelectValue placeholder="All Prices" /></SelectTrigger>
+              <SelectContent>
+                {PRICE_BANDS.map((b) => (
+                  <SelectItem key={b.label} value={b.label}>{b.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-1 ml-auto">
             <Button variant={viewMode === "grid" ? "default" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("grid")}><Grid3X3 className="w-4 h-4" /></Button>
@@ -414,31 +432,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Floating Compare Bar */}
-      <AnimatePresence>
-        {compareStore.ids.length > 0 && (
-          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-0 left-0 right-0 z-[999] bg-white border-t shadow-2xl">
-            <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium">{compareStore.ids.length} vehicle{compareStore.ids.length > 1 ? "s" : ""} selected</span>
-                <div className="flex -space-x-2">
-                  {vehicles.filter((v) => compareStore.has(v.id)).slice(0, 4).map((v) => {
-                    const parsed = parsePhotos(v.photos)
-                    return (
-                      <div key={v.id} className="w-8 h-8 rounded-full border-2 border-white bg-gray-200 overflow-hidden shrink-0">
-                        {parsed?.[0] ? <img src={parsed[0]} alt="" className="w-full h-full object-cover" /> : <Car className="w-4 h-4 mx-auto mt-2 text-gray-400" />}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={compareStore.clear}><X className="w-4 h-4 mr-1" />Clear</Button>
-                <Link href="/compare"><Button size="sm">Compare Now</Button></Link>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CompareBar />
 
       <QuickViewDialog vehicle={quickViewVehicle} open={!!quickViewVehicle} onClose={() => setQuickViewVehicle(null)} />
     </div>

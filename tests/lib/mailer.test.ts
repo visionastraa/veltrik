@@ -25,7 +25,7 @@ describe("mailer", () => {
     it("returns HTML with amount and order ID", () => {
       const html = buildPaymentReceiptEmail("Bob", 15000000, "order_123")
       expect(html).toContain("Bob")
-      expect(html).toContain("150,000")
+      expect(html).toContain("1,50,000")
       expect(html).toContain("order_123")
     })
   })

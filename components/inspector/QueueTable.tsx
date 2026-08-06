@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface QueueItem {
   id: string;
+  booked?: boolean;
   scheduledAt: Date;
   sellerLead: {
     id: string;
@@ -21,7 +22,7 @@ interface QueueItem {
   user: {
     name: string | null;
     phone: string | null;
-  };
+  } | null;
 }
 
 interface QueueTableProps {
@@ -116,7 +117,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                 setTimeFilter(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+              className="glass w-full px-3.5 py-2 rounded-xl border text-sm outline-none focus:border-ring focus:ring-2"
             >
               <option value="all">All Times</option>
               <option value="morning">Morning (&lt; 12 PM)</option>
@@ -133,7 +134,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                 setSortOrder(e.target.value);
                 setPage(1);
               }}
-              className="w-full px-3.5 py-2 rounded-xl border border-border bg-card text-sm outline-none focus:border-ring focus:ring-2"
+              className="glass w-full px-3.5 py-2 rounded-xl border text-sm outline-none focus:border-ring focus:ring-2"
             >
               <option value="asc">Date Ascending</option>
               <option value="desc">Date Descending</option>
@@ -222,7 +223,8 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                     hour12: true,
                   });
 
-                  const isMissed = new Date(booking.scheduledAt).getTime() < Date.now();
+                  const isBooked = booking.booked !== false;
+                  const isMissed = isBooked && new Date(booking.scheduledAt).getTime() < Date.now();
 
                   return (
                     <tr key={booking.id} className="group hover:bg-muted/10 transition-colors">
@@ -230,8 +232,14 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                         <div className="flex items-center gap-2.5">
                           <Calendar className="size-4.5 text-muted-foreground" />
                           <div>
-                            <span className="text-sm font-bold text-foreground block">{dateStr}</span>
-                            <span className="text-xs text-muted-foreground">{timeStr}</span>
+                            {booking.booked === false ? (
+                              <span className="text-sm font-bold text-foreground block">Scheduling Pending</span>
+                            ) : (
+                              <>
+                                <span className="text-sm font-bold text-foreground block">{dateStr}</span>
+                                <span className="text-xs text-muted-foreground">{timeStr}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -253,7 +261,12 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                         </div>
                       </td>
                       <td className="py-4.5 px-6">
-                        {isMissed ? (
+                        {!isBooked ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 text-blue-600 text-[11px] font-semibold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            Scheduling Pending
+                          </span>
+                        ) : isMissed ? (
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/20 bg-amber-500/10 text-amber-600 text-[11px] font-semibold">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             Missed - Reschedule Required
@@ -266,7 +279,7 @@ export default function QueueTable({ bookings }: QueueTableProps) {
                         )}
                       </td>
                       <td className="py-4.5 px-6 text-right">
-                        {isMissed ? (
+                        {isBooked && isMissed ? (
                           <span className="text-xs font-semibold text-muted-foreground">
                             Reschedule Required
                           </span>

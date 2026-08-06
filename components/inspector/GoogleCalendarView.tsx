@@ -26,8 +26,10 @@ interface BookingItem {
   };
 }
 
-interface GoogleCalendarViewProps {
+export interface GoogleCalendarViewProps {
   bookings: BookingItem[];
+  selectedDate: Date;
+  onDateChange: (date: Date) => void;
 }
 
 const timeSlots = [
@@ -42,35 +44,30 @@ const timeSlots = [
   { hour: 18, label: "06:00 PM" },
 ];
 
-export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps) {
+export default function GoogleCalendarView({ bookings, selectedDate, onDateChange }: GoogleCalendarViewProps) {
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [statusFilter, setStatusFilter] = useState("all");
 
   const handlePrevDay = () => {
-    setSelectedDate((prev) => {
-      const nextDate = new Date(prev);
-      nextDate.setDate(prev.getDate() - 1);
-      return nextDate;
-    });
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(selectedDate.getDate() - 1);
+    onDateChange(nextDate);
   };
 
   const handleNextDay = () => {
-    setSelectedDate((prev) => {
-      const nextDate = new Date(prev);
-      nextDate.setDate(prev.getDate() + 1);
-      return nextDate;
-    });
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(selectedDate.getDate() + 1);
+    onDateChange(nextDate);
   };
 
   const handleGoToToday = () => {
-    setSelectedDate(new Date());
+    onDateChange(new Date());
   };
 
   const handleGoToTomorrow = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    setSelectedDate(tomorrow);
+    onDateChange(tomorrow);
   };
 
   // Filter bookings by selected day, search terms, and status
@@ -163,7 +160,7 @@ export default function GoogleCalendarView({ bookings }: GoogleCalendarViewProps
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full sm:w-auto px-3 py-1.8 rounded-xl border border-border bg-background text-xs outline-none focus:border-ring focus:ring-2"
+            className="glass w-full sm:w-auto px-3 py-1.8 rounded-xl border text-xs outline-none focus:border-ring focus:ring-2"
           >
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>

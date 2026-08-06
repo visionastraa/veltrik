@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev\" \"tsx watch server.ts\"",
+    "dev": "tsx watch server.ts",
     "dev:socket": "tsx watch server.ts",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",

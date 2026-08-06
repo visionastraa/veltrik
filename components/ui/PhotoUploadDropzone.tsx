@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 interface PhotoUploadDropzoneProps {
   onUpload: (files: File[]) => void
   existingUrls?: string[]
-  onRemoveExisting?: (index: number) => void
+  onRemoveExisting?: (url: string) => void
   maxFiles?: number
   maxSizeMB?: number
   accept?: string
@@ -25,8 +25,8 @@ export function PhotoUploadDropzone({
 }: PhotoUploadDropzoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [previews, setPreviews] = useState<string[]>(existingUrls)
-  const totalCount = previews.length
+  const [previews, setPreviews] = useState<string[]>([])
+  const totalCount = existingUrls.length + previews.length
 
   const handleFiles = (files: FileList) => {
     const remaining = maxFiles - totalCount
@@ -47,9 +47,12 @@ export function PhotoUploadDropzone({
     }
   }
 
+  const removeExisting = (url: string) => {
+    onRemoveExisting?.(url)
+  }
+
   const removePreview = (idx: number) => {
     setPreviews((p) => p.filter((_, i) => i !== idx))
-    onRemoveExisting?.(idx)
   }
 
   return (
@@ -76,14 +79,27 @@ export function PhotoUploadDropzone({
         <p className="text-sm text-gray-500">Click to upload or drag and drop</p>
         <p className="text-xs text-gray-400 mt-1">PNG, JPG up to {maxSizeMB}MB</p>
       </div>
-      {previews.length > 0 && (
+      {totalCount > 0 && (
         <div className="grid grid-cols-4 gap-2">
+          {existingUrls.map((url, idx) => (
+            <div key={`existing-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+              <img src={url} alt={`Uploaded ${idx + 1}`} className="w-full h-full object-cover" />
+              <button
+                onClick={() => removeExisting(url)}
+                className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                type="button"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
           {previews.map((url, idx) => (
-            <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
-              <img src={url} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
+            <div key={`preview-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+              <img src={url} alt={`Pending upload ${idx + 1}`} className="w-full h-full object-cover" />
               <button
                 onClick={() => removePreview(idx)}
                 className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                type="button"
               >
                 <X className="w-3 h-3" />
               </button>
@@ -93,6 +109,7 @@ export function PhotoUploadDropzone({
             <button
               onClick={() => fileInputRef.current?.click()}
               className="aspect-square rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center hover:border-primary/50 transition-colors"
+              type="button"
             >
               <ImageIcon className="w-6 h-6 text-gray-400" />
             </button>
